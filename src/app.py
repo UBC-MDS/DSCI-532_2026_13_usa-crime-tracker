@@ -182,20 +182,78 @@ app_ui = ui.page_navbar(
                     ),
                 ),
             ),
-            # Visualization and Summary Section
-            ui.h1("USA Crime Dashboard"),
-            # KPI and Summary
-            ui.layout_columns(
-                ui.value_box("Total Crimes", ui.output_text("total_crimes")),
-                ui.value_box("Crime Rate (per 100k)", ui.output_text("crime_rate")),
-                ui.value_box("Population", ui.output_text("pop_kpi")),
-                # ADDED: KPI — MOST COMMON CRIME
-                ui.card(
-                    ui.h5("Most Common Crime"),
-                    ui.output_text("kpi_most_common")
+
+            ui.tags.style("""
+                .bslib-sidebar-layout > .collapse-toggle {
+                    top: 56px !important;
+                }
+                
+                .fixed-main-header {
+                    position: fixed;
+                    z-index: 1020;
+                    background: white;
+                    border-bottom: 1px solid #ddd;
+                    padding-top: 0.4rem;
+                    padding-bottom: 0.2rem;
+                    box-sizing: border-box;
+                }
+
+                .fixed-main-header h1 {
+                    margin-top: 0;
+                    margin-bottom: 0.2rem;
+                }
+            """),
+
+            ui.tags.script("""
+                function syncFixedMainHeader() {
+                    const header = document.querySelector('.fixed-main-header');
+                    const main = document.querySelector('.bslib-page-main');
+                    const navbar = document.querySelector('.navbar');
+
+                    if (!header || !main) return;
+
+                    const rect = main.getBoundingClientRect();
+                    const navHeight = navbar ? navbar.offsetHeight : 56;
+
+                    header.style.left = rect.left + 'px';
+                    header.style.width = rect.width + 'px';
+                    header.style.top = navHeight + 'px';
+                    main.style.paddingTop = (header.offsetHeight + 4) + 'px';
+                }
+
+                window.addEventListener('load', syncFixedMainHeader);
+                window.addEventListener('resize', syncFixedMainHeader);
+                document.addEventListener('click', () => setTimeout(syncFixedMainHeader, 50));
+
+                const observer = new MutationObserver(() => {
+                    setTimeout(syncFixedMainHeader, 50);
+                });
+
+                window.addEventListener('load', () => {
+                    observer.observe(document.body, {
+                        attributes: true,
+                        childList: true,
+                        subtree: true
+                    });
+                });
+            """),
+
+            ui.div(
+                {"class": "fixed-main-header"},
+                # Visualization and Summary Section
+                ui.h1("USA Crime Dashboard"),
+                # KPI and Summary
+                ui.layout_columns(
+                    ui.value_box("Total Crimes", ui.output_text("total_crimes")),
+                    ui.value_box("Crime Rate (per 100k)", ui.output_text("crime_rate")),
+                    ui.value_box("Population", ui.output_text("pop_kpi")),
+                    # ADDED: KPI — MOST COMMON CRIME
+                    ui.card(
+                        ui.h5("Most Common Crime"),
+                        ui.output_text("kpi_most_common")
+                    ),
                 ),
             ),
-            ui.hr(),
             # Map Visuals
             ui.card(
                 ui.h5("Crime Map"),
@@ -254,7 +312,8 @@ app_ui = ui.page_navbar(
 
             )
         )
-    )
+    ),
+    position="fixed-top",
 )
 
 
