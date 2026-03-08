@@ -355,8 +355,26 @@ app_ui = ui.page_navbar(
                 # KPI and Summary
                 ui.layout_columns(
                     ui.value_box("Total Crimes", ui.output_text("total_crimes")),
-                    ui.value_box("Crime Rate (per 100k)", ui.output_text("crime_rate")),
-                    ui.value_box("Population", ui.output_text("pop_kpi")),
+                    ui.value_box("Crime Rate (per 100k)",
+                                ui.div(
+                                    ui.output_text("crime_rate"),
+                                    ui.div(
+                                    {"style": "font-size:12px; color:gray;"},
+                                    ui.output_text("crime_rate_change")
+                                )
+                        )
+                    )
+                ,                                  
+                    ui.value_box(
+                        "Population",
+                        ui.div(
+                            ui.output_text("pop_kpi"),
+                            ui.div(
+                                {"style": "font-size:12px; color:gray;"},
+                                ui.output_text("pop_change")
+                            )
+                        )
+                    ),
                     # ADDED: KPI — MOST COMMON CRIME
                     ui.card(
                         ui.h5("Most Common Crime"),
@@ -384,6 +402,9 @@ app_ui = ui.page_navbar(
                     12,
                     ui.card(
                         ui.h5(ui.output_text("change_table_title")),
+                        ui.div(
+                            {"style": "font-size:12px; color:gray; margin-top:4px;"},
+                            ui.output_text("aggregation_note")),
                         ui.output_data_frame("kpi_change_table")
                     )
                 )
@@ -492,7 +513,20 @@ def server(input, output, session):
         latest_year = df["year"].max()
         df_latest = df[df["year"] == latest_year]
 
-        total_crime = df_latest["violent_crime"].sum()
+        category = input.crime_category()
+
+        if category == "violent":
+            crime_col = "violent_crime"
+        elif category == "homs":
+            crime_col = "homs_sum"
+        elif category == "rape":
+            crime_col = "rape_sum"
+        elif category == "rob":
+            crime_col = "rob_sum"
+        elif category == "agg_ass":
+            crime_col = "agg_ass_sum"
+
+        total_crime = df_latest[crime_col].sum()
         total_pop = df_latest.drop_duplicates(["city", "state_id"])["total_pop"].sum()
         rate = int((total_crime / total_pop) * 100000)
 
@@ -506,6 +540,37 @@ def server(input, output, session):
         duplicates_cities = df_latest.drop_duplicates(subset=["city", "state_id"])
         pop = int(duplicates_cities["total_pop"].sum())
         return pop
+    
+    @render.text
+    def pop_change():
+
+        df = filtered_df().copy()
+        if df.empty:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+
+        # latest year
+        df_latest = df[df["year"] == yr_max]
+
+        # previous years
+        df_prev = df[(df["year"] >= yr_min) & (df["year"] < yr_max)]
+
+        latest_pop = df_latest.drop_duplicates(["city", "state_id"])["total_pop"].sum()
+
+        prev_yearly_pop = (
+            df_prev.groupby("year")
+            .apply(lambda x: x.drop_duplicates(["city", "state_id"])["total_pop"].sum())
+        )
+
+        prev_avg_pop = prev_yearly_pop.mean()
+
+        pct_change = ((latest_pop - prev_avg_pop) / prev_avg_pop) * 100
+        pct_change = round(pct_change, 2)
+
+        sign = "+" if pct_change > 0 else ""
+
+        return f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg"
 
     @render.text
     def debug_line_plot():
@@ -755,7 +820,8 @@ def server(input, output, session):
         }
 
         return max(crime_totals, key=crime_totals.get)
-
+    
+    
     @output
     @render.text
     def kpi_most_common():
@@ -775,18 +841,13 @@ def server(input, output, session):
             rate_col = "violent_per_100k"
             title = "Violent Crime"
 
-
         elif category == "homs":
             rate_col = "homs_per_100k"
             title = "Homicide"
 
-        
-
         elif category == "rape":
             rate_col = "rape_per_100k"
             title = "Rape"
-
-            
 
         elif category == "rob":
             rate_col = "rob_per_100k"
@@ -835,6 +896,66 @@ def server(input, output, session):
             title = "Aggravated Assault"
 
         return f"Change in {title} Rate ({yr_min}-{yr_max})"
+    
+    @render.text
+    def aggregation_note():
+        selected = list(input.cities())
+
+        if selected and "All" not in selected and len(selected) > 1:
+            return "Note: Table values are aggregated across selected cities."
+
+        return ""
+
+    @output
+    @render.text
+    def crime_rate_change():
+
+        df = filtered_df().copy()
+        if df.empty:
+            return ""
+
+        category = input.crime_category()
+
+        if category == "violent":
+            crime_col = "violent_crime"
+            title = "Violent Crime"
+
+        elif category == "homs":
+            crime_col = "homs_sum"
+            title = "Homicide"
+
+        elif category == "rape":
+            crime_col = "rape_sum"
+            title = "Rape"
+
+        elif category == "rob":
+            crime_col = "rob_sum"
+            title = "Robbery"
+
+        elif category == "agg_ass":
+            crime_col = "agg_ass_sum"
+            title = "Aggravated Assault"
+
+        yr_min, yr_max = input.year_range()
+
+        df_latest = df[df["year"] == yr_max]
+        df_prev = df[(df["year"] >= yr_min) & (df["year"] < yr_max)]
+
+        latest_crime = df_latest[crime_col].sum()
+        latest_pop = df_latest.drop_duplicates(["city","state_id"])["total_pop"].sum()
+        latest_rate = (latest_crime / latest_pop) * 100000
+
+        prev_crime = df_prev[crime_col].sum()
+        prev_pop = df_prev.drop_duplicates(["city","state_id"])["total_pop"].sum()
+        prev_rate = (prev_crime / prev_pop) * 100000
+        prev_rate = prev_rate / (yr_max - yr_min)
+
+        pct_change = ((latest_rate - prev_rate) / prev_rate) * 100
+        pct_change = round(pct_change, 2)
+
+        sign = "+" if pct_change > 0 else ""
+
+        return f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg"
 
     @output
     @render.data_frame
