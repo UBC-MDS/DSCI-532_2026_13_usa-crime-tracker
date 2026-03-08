@@ -31,15 +31,15 @@ The AI assistant processes the query and returns a text response, while also dis
 
 ### Environment Variable Requirement
 
-To use the AI assistant, an Anthropic API key must be provided as an environment variable:
+To use the AI assistant, a Github Models API key must be provided as an environment variable:
 
 ```bash
-ANTHROPIC_API_KEY
+GITHUB_TOKEN = ...
 ```
 
 The application accesses this key in the code using:
 ```python
-os.getenv("ANTHROPIC_API_KEY")
+load_dotenv(Path(__file__).parent.parent / ".env")
 ```
 
 When deploying the application (e.g., on Posit Connect Cloud), this variable must be added to the deployment's **Environment Variables** so the AI assistant can communicate with the Anthropic API.
