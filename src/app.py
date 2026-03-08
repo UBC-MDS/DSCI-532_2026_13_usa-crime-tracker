@@ -11,7 +11,7 @@ import altair as alt
 from shinywidgets import output_widget, render_altair
 from vega_datasets import data
 
-# load_dotenv(Path(__file__).parent.parent / ".env")
+load_dotenv(Path(__file__).parent.parent / ".env")
 github_key = os.environ.get("GITHUB_TOKEN")
 
 # Load and Clean Raw Crime Data
