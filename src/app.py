@@ -204,13 +204,33 @@ app_ui = ui.page_navbar(
             ),
 
             ui.tags.style("""
-                /* Center and style the navbar title */
+                /* Make navbar a flex container to separate title and nav items */
+                .navbar {
+                    display: flex !important;
+                    align-items: center !important;
+                    width: 100% !important;
+                }
+
+                /* Place navbar title on the left and keep current text styling */
                 .navbar-brand {
-                    position: absolute;
-                    left: 50%;
-                    transform: translateX(-50%);
+                    position: static;
+                    transform: none;
+                    flex-shrink: 0;
                     font-size: 1.6rem;
                     font-weight: 600;
+                }
+
+                /* Push navbar collapse (contains both buttons) to the right */
+                .navbar-collapse {
+                    margin-left: auto !important;
+                    width: auto !important;
+                    flex-grow: 0 !important;
+                }
+
+                .navbar-nav {
+                    display: flex !important;
+                    flex-direction: row !important;
+                    margin-left: 0 !important;
                 }
                 
                 /* Base styles for the sidebar collapse toggle button */
