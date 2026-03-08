@@ -273,11 +273,11 @@ app_ui = ui.page_navbar(
                 ui.input_slider(
                     "violent_range",
                     "Violent Crime Range",
-                    min=int(df_raw["violent_crime"].min()),
-                    max=int(df_raw["violent_crime"].max()),
+                    min=int(df_raw["violent_per_100k"].min()),
+                    max=int(df_raw["violent_per_100k"].max()),
                     value=(
-                        int(df_raw["violent_crime"].min()),
-                        int(df_raw["violent_crime"].max()),
+                        int(df_raw["violent_per_100k"].min()),
+                        int(df_raw["violent_per_100k"].max()),
                     ),
                 ),
                 ui.hr(),
