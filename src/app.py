@@ -1,11 +1,17 @@
+from pathlib import Path
 from shiny import App, ui, reactive, render
 import anthropic
 import os
+import querychat
+from chatlas import ChatGithub
+from dotenv import load_dotenv
 
 import pandas as pd
 import altair as alt
 from shinywidgets import output_widget, render_altair
 from vega_datasets import data
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 # Load and Clean Raw Crime Data
 df_raw = pd.read_csv("data/raw/crime_rate_data_raw.csv").drop(columns=["source", "url"])
@@ -124,26 +130,23 @@ CRIME_CONFIG = {
 min_pop = int(df_merged["total_pop"].min())
 max_pop = int(df_merged["total_pop"].max())
 
-ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
-MAX_TOKENS = 300   # token limit
+# ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+# client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+# MAX_TOKENS = 300  # token limit
 
-import querychat
-
-#FIX API KEY
-#os.environ["ANTHROPIC_API_KEY"] =
+# FIX API KEY
+# os.environ["ANTHROPIC_API_KEY"] =
 
 
-# ── querychat (Tab 1) 
+# ── querychat (Tab 1)
 qc = querychat.QueryChat(
     df_merged.copy(),
     "Statistics",
     greeting="""👋 Ask me anything about US crime statistics.
 
-* <span class="suggestion">Filter to New York City only</span>
+* <span class="suggestion">Filter to Los Angeles only</span>
 * <span class="suggestion">Which city has the highest crime rate?</span>
 """,
-
     data_description="""
 Violent Crime Statistics in the USA (for 57 cities from 32 states).
 - state_id: state id code, for example: CA for california
@@ -183,23 +186,23 @@ state_mapping = {
     "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
 }
 """,
-    client="anthropic/claude-haiku-4-5-20251001"
-    #client=ChatGithub(model="gpt-4.1-mini"),
+    # client="anthropic/claude-haiku-4-5-20251001",
+    client=ChatGithub(model="gpt-4.1-mini"),
 )
-    
-    # # Commented out LLM frontend UI code
-    # ui.nav_panel(
-    #     "LLM Chat",
-    #     ui.layout_sidebar(
-    #         qc.sidebar(),
-    #         ui.card(
-    #             ui.card_header(ui.output_text("chat_title")),
-    #             ui.output_data_frame("chat_table"),
-    #             fill=True,
-    #         ),
-    #         fillable=True,
-    #     ),
-    # )
+
+# # Commented out LLM frontend UI code
+# ui.nav_panel(
+#     "LLM Chat",
+#     ui.layout_sidebar(
+#         qc.sidebar(),
+#         ui.card(
+#             ui.card_header(ui.output_text("chat_title")),
+#             ui.output_data_frame("chat_table"),
+#             fill=True,
+#         ),
+#         fillable=True,
+#     ),
+# )
 
 app_ui = ui.page_navbar(
     # PAGE 1: Dashboard
@@ -216,15 +219,18 @@ app_ui = ui.page_navbar(
                 ui.h5("Date Range and Population"),
                 # ADDED: DATE SLIDER
                 ui.h5("Date Range"),
-                #ui.p("Date Range filter"),
+                # ui.p("Date Range filter"),
                 ui.input_slider(
                     "year_range",
                     "Select Year",
                     min=int(df_merged["year"].min()),
                     max=int(df_merged["year"].max()),
-                    value=[int(df_merged["year"].max()) - 4, int(df_merged["year"].max())],
+                    value=[
+                        int(df_merged["year"].max()) - 4,
+                        int(df_merged["year"].max()),
+                    ],
                     step=1,
-                    sep=""
+                    sep="",
                 ),
                 ui.hr(),
                 ui.input_slider(
@@ -275,8 +281,8 @@ app_ui = ui.page_navbar(
                     ),
                 ),
             ),
-
-            ui.tags.style("""
+            ui.tags.style(
+                """
                 /* Make navbar a flex container to separate title and nav items */
                 .navbar {
                     display: flex !important;
@@ -387,9 +393,10 @@ app_ui = ui.page_navbar(
                 .ai-assistant-offset {
                     margin-top: 56px;
                 }
-            """),
-
-            ui.tags.script("""
+            """
+            ),
+            ui.tags.script(
+                """
                 function syncFixedMainHeader() {
                     const header = document.querySelector('.fixed-main-header');
                     const main = document.querySelector('.bslib-page-main');
@@ -421,7 +428,8 @@ app_ui = ui.page_navbar(
                         subtree: true
                     });
                 });
-            """),
+            """
+            ),
             # Visualization and Summary Section
             ui.div(
                 {"class": "fixed-main-header"},
@@ -432,8 +440,7 @@ app_ui = ui.page_navbar(
                     ui.value_box("Population", ui.output_text("pop_kpi")),
                     # ADDED: KPI — MOST COMMON CRIME
                     ui.card(
-                        ui.h5("Most Common Crime"),
-                        ui.output_text("kpi_most_common")
+                        ui.h5("Most Common Crime"), ui.output_text("kpi_most_common")
                     ),
                 ),
             ),
@@ -450,57 +457,110 @@ app_ui = ui.page_navbar(
                     ui.card(
                         ui.h5("Crime Rate Over Time (per 100k)"),
                         output_widget("line_plot"),
-                    )
+                    ),
                 ),
-            
                 ui.column(
                     12,
                     ui.card(
                         ui.h5("Change in Crime Rate"),
-                        ui.output_data_frame("kpi_change_table")
-                    )
-                )
+                        ui.output_data_frame("kpi_change_table"),
+                    ),
+                ),
             ),
-            
-            ui.hr()
-        )
-
+            ui.hr(),
+        ),
     ),
-
     # PAGE 2: AI Assistant
     ui.nav_panel(
         "AI Assistant",
-        ui.layout_columns(
-            {"class": "ai-assistant-offset"},
-            ui.card(
-                ui.h3("AI Assistant"),
-
-                ui.input_text_area(
-                    "ai_user_input",
-                    "Ask the AI about the dataset:",
-                    placeholder="e.g., summarize crime trends in Texas",
-                    rows=4
+        ui.layout_sidebar(
+            ui.sidebar(
+                # ui.div(
+                #     ui.h4("Filters"),
+                #     ui.hr(),
+                #     {"class": "sidebar-fixed-header"},
+                # ),
+                ui.input_select(
+                    "chat_crime_category",
+                    "Crime Category:",
+                    {
+                        "violent": "All",
+                        "homs": "Homicide",
+                        "rape": "Rape",
+                        "rob": "Robbery",
+                        "agg_ass": "Aggravated Assault",
+                    },
                 ),
-
-                ui.input_action_button("ai_send_btn", "Send"),
-
-                ui.hr(),
-
-                ui.h4("AI Response"),
-                ui.output_text_verbatim("ai_chat_output"),
-
-                ui.hr(),
-
-                ui.h4("Filtered DataFrame"),
-                ui.output_data_frame("ai_dataframe_output")
-
-            )
-        )
+                ui.h5("Data Assistant"),
+                ui.div(
+                    qc.ui(),
+                    ui.hr(),
+                    ui.download_button("download_data", "Download Filtered CSV"),
+                    style="height: calc(100vh); overflow-y: auto;",  # Forces scrolling inside the div
+                ),
+                width="clamp(250px, 30vw, 500px)",
+            ),
+            ui.hr(),
+            # --- Map ---
+            ui.card(
+                ui.h5(ui.output_text("chat_map_title")),
+                output_widget("chat_map_plot"),
+            ),
+            ui.hr(),
+            # --- Visual Summaries ---
+            ui.layout_columns(
+                # --- Line Chart ---
+                ui.column(
+                    12,
+                    ui.card(
+                        ui.h5("Violent Crime Over Time"),
+                        output_widget("chat_line_plot"),
+                        # fill=True,
+                    ),
+                ),
+                # --- Rate Change Table ---
+                ui.column(
+                    12,
+                    ui.card(
+                        ui.card_header(ui.output_text("chat_title")),
+                        ui.output_data_frame("chat_table"),
+                        fill=True,
+                    ),
+                ),
+            ),
+            fillable=True,
+        ),
+        value="llm_interface",
+        # ui.layout_columns(
+        #     {"class": "ai-assistant-offset"},
+        #     ui.card(
+        #         ui.h3("AI Assistant"),
+        #         ui.input_text_area(
+        #             "ai_user_input",
+        #             "Ask the AI about the dataset:",
+        #             placeholder="e.g., summarize crime trends in Texas",
+        #             rows=4,
+        #         ),
+        #         ui.input_action_button("ai_send_btn", "Send"),
+        #         ui.hr(),
+        #         ui.h4("AI Response"),
+        #         ui.output_text_verbatim("ai_chat_output"),
+        #         ui.hr(),
+        #         ui.h4("Filtered DataFrame"),
+        #         ui.output_data_frame("ai_dataframe_output"),
+        #     ),
+        # ),
     ),
     title="USA Crime Dashboard",
     position="fixed-top",
+    bg="#2c4750",  # Background color (Hex code)
+    inverse=True,  # Light text for dark backgrounds
+    footer=ui.tags.div(
+        # ui.markdown("---"),
+        ui.p("2026 MDS DSCI 532 Group 13 | System Status: Online"),
+        style="padding: 10px; text-align: center; font-size: 0.8em;",
+    ),
 )
-
 
 
 def server(input, output, session):
@@ -813,6 +873,7 @@ def server(input, output, session):
             .project("albersUsa")
             .properties(width="container", height=500)
         )
+
     # ADDED: KPI — MOST COMMON CRIME (USING *_sum COLUMNS)
     @reactive.Calc
     def most_common_crime():
@@ -824,7 +885,7 @@ def server(input, output, session):
             "Homicide": d["homs_sum"].sum(),
             "Rape": d["rape_sum"].sum(),
             "Robbery": d["rob_sum"].sum(),
-            "Aggravated Assault": d["agg_ass_sum"].sum()
+            "Aggravated Assault": d["agg_ass_sum"].sum(),
         }
 
         return max(crime_totals, key=crime_totals.get)
@@ -849,67 +910,302 @@ def server(input, output, session):
             .sort_values("year")
         )
 
-        # ROUND ALL NUMERIC COLUMNS TO 2 DECIMAL PLACES 
-        yearly["previous"] = round(yearly["violent_per_100k"].shift(1),2)
-        yearly["change"] = round(yearly["violent_per_100k"] - yearly["previous"],2)
-        yearly["violent_per_100k"] = round(yearly["violent_per_100k"],2)
-        
+        # ROUND ALL NUMERIC COLUMNS TO 2 DECIMAL PLACES
+        yearly["previous"] = round(yearly["violent_per_100k"].shift(1), 2)
+        yearly["change"] = round(yearly["violent_per_100k"] - yearly["previous"], 2)
+        yearly["violent_per_100k"] = round(yearly["violent_per_100k"], 2)
+
         return yearly
 
-    @output
-    @render.data_frame
-    def kpi_change_table():
-        return crime_change_table()     
+    # ----- TAB 2: LLM Chat -----
 
+    # @output
+    # @render.data_frame
+    # def kpi_change_table():
+    #     return crime_change_table()
 
-    @reactive.Effect
-    @reactive.event(input.ai_send_btn)
-    def _():
-        user_input = input.ai_user_input()
-    
-        if not user_input:
-            output.ai_chat_output.set("Please enter a question.")
-            return
-    
-        output.ai_chat_output.set("Thinking...")
-    
-        async def call_ai():
-            try:
-                response = await asyncio.to_thread(
-                    client.messages.create,
-                    model="claude-haiku-4-5-20251001",
-                    max_tokens=MAX_TOKENS,
-                    messages=[{"role": "user", "content": user_input}]
-                )
-                return response.content[0].text
-            except Exception as e:
-                return f"Error calling Anthropic API: {e}"
-    
-        task = reactive.Task(call_ai())
-    
-        @task.on_done
-        def _(result):
-            output.ai_chat_output.set(result)
+    # @reactive.Effect
+    # @reactive.event(input.ai_send_btn)
+    # def _():
+    #     user_input = input.ai_user_input()
 
+    #     if not user_input:
+    #         output.ai_chat_output.set("Please enter a question.")
+    #         return
 
-    # Filtered df
-    @output
-    @render.data_frame
-    def ai_dataframe_output():
-        return filtered_df()
+    #     output.ai_chat_output.set("Thinking...")
 
-    # ── Tab 1: querychat 
+    #     async def call_ai():
+    #         try:
+    #             response = await asyncio.to_thread(
+    #                 client.messages.create,
+    #                 model="claude-haiku-4-5-20251001",
+    #                 max_tokens=MAX_TOKENS,
+    #                 messages=[{"role": "user", "content": user_input}],
+    #             )
+    #             return response.content[0].text
+    #         except Exception as e:
+    #             return f"Error calling Anthropic API: {e}"
+
+    #     task = reactive.Task(call_ai())
+
+    #     @task.on_done
+    #     def _(result):
+    #         output.ai_chat_output.set(result)
+
+    # # Filtered df
+    # @output
+    # @render.data_frame
+    # def ai_dataframe_output():
+    #     return filtered_df()
+
+    # # ── Tab 2: querychat
+    # qc_vals = qc.server()
+
+    # @render.text
+    # def chat_title():
+    #     return qc_vals.title() or "US Crime dataset"
+
+    # @render.data_frame
+    # def chat_table():
+    #     return qc_vals.df()
+
+    # --- Tab 2: querychat ---
     qc_vals = qc.server()
 
     @render.text
     def chat_title():
-        return qc_vals.title() or "US Crime dataset"
+        return qc_vals.title() or "Crime Statistics Dataset"
 
     @render.data_frame
     def chat_table():
         return qc_vals.df()
 
+    # filtered_df_reactive = querychat_server("chat_logic", data=pd.read_csv("data.csv"))
 
+    @reactive.calc
+    def chat_filtered_data():
+        # This gets the data currently visible in your chat_table,
+        # taking into account the AI's filters AND any manual selections.
+        selected_df = chat_table.data_view(selected=True)
+
+        # If nothing is selected, maybe return the whole chat-filtered df
+        if selected_df.empty:
+            return qc_vals.df()
+
+        return selected_df
+
+    # Define download handler
+    @render.download(filename="filtered_data.csv")
+    def download_data():
+        # Access the current state of the filtered dataframe
+        df = chat_filtered_data()
+
+        # Yield the CSV content
+        yield df.to_csv(index=False)
+
+    @render.text
+    def chat_map_title():
+        df = chat_filtered_data().copy()
+        yr_max = df["year"].max()
+        yr_min = df["year"].min()
+        if yr_max == yr_min:
+            return f"Crime Map ({yr_min})"
+        return f"Crime Map ({yr_min}-{yr_max})"
+
+    # --- Chart 1: LLM filtered Line Chart ---
+    @render_altair
+    def chat_line_plot():
+        df = chat_filtered_data().copy()
+
+        category = str(input.chat_crime_category())
+        config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
+        per_100k_col = config["per_100k_column"]
+        crime_title = config["title"]
+
+        df["year"] = pd.to_numeric(df["year"], errors="coerce")
+        df[per_100k_col] = pd.to_numeric(df[per_100k_col], errors="coerce")
+
+        df = df.dropna(subset=["year", per_100k_col])
+
+        if df.empty:
+            return (
+                alt.Chart(pd.DataFrame({"msg": ["No data after filtering"]}))
+                .mark_text(size=16)
+                .encode(text="msg:N")
+            )
+
+        selected = list(df["city"].unique())
+        multi = (len(selected) > 1) and (len(selected) != 57)
+
+        # If multiple cities are selected, show lines for each city. Otherwise, show aggregated line for all cities.
+        if multi:
+            plot_df = df.groupby(["year", "city"], as_index=False)[per_100k_col].mean()
+
+            return (
+                alt.Chart(plot_df)
+                .mark_line()
+                .encode(
+                    x=alt.X("year:Q", title="Year", axis=alt.Axis(format="d")),
+                    y=alt.Y(f"{per_100k_col}:Q", title=f"{crime_title} (per 100k)"),
+                    color=alt.Color("city:N", title="City/Dept"),
+                    tooltip=[
+                        alt.Tooltip("year:Q", title="Year", format="d"),
+                        "city:N",
+                        f"{per_100k_col}:Q",
+                    ],
+                )
+                .properties(width="container", height=340)
+            )
+
+        # All Cities (aggregated)
+        plot_df = df.groupby("year", as_index=False)[per_100k_col].mean()
+
+        return (
+            alt.Chart(plot_df)
+            .mark_line()
+            .encode(
+                x=alt.X("year:Q", title="Year", axis=alt.Axis(format="d")),
+                y=alt.Y(f"{per_100k_col}:Q", title=f"{crime_title} (per 100k)"),
+                tooltip=[
+                    alt.Tooltip("year:Q", title="Year", format="d"),
+                    f"{per_100k_col}:Q",
+                ],
+            )
+            .properties(width="container", height=340)
+        )
+
+    # --- Chart 2: LLM Filtered Map Plot ---
+
+    @render_altair
+    def chat_map_plot():
+
+        # need to filter df on years still!
+        # need to change to collect inputs!
+
+        df = chat_filtered_data().copy()
+
+        category = str(input.chat_crime_category())
+        config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
+
+        # State Level View
+        state_id_to_show = 0
+        state_view = not (state_id_to_show == 0)
+
+        # Multi City Selection
+        selected = list(df["city"].unique())
+        multi = (len(selected) > 1) and (len(selected) != 57)
+
+        if state_view:
+            # Isolate the specific state
+            background = (
+                alt.Chart(states)
+                .mark_geoshape(fill="#f0f0f0", stroke="white")
+                .transform_filter(alt.datum.id == state_id_to_show)
+                .transform_lookup(
+                    lookup="id",
+                    from_=alt.LookupData(mapping_df, "id", ["state_name"]),
+                )
+                .encode(tooltip=["state_name:N"])
+            )
+
+            # Plotting df
+            plot_df = df
+
+            # Get cities in the state
+            state_cities = sorted(plot_df["city"].dropna().unique().tolist())
+
+            # Keep only selected cities that are in the state
+            selected = list(set(selected) & set(state_cities))
+
+            # Aggregate State Level Data
+            plot_df = plot_df.groupby(["city", "state_id"]).agg(["mean"])
+            plot_df.columns = [c[0] for c in plot_df.columns]
+            plot_df = plot_df.reset_index()
+
+        else:
+            # Country View
+            background = (
+                alt.Chart(states)
+                .mark_geoshape(fill="#f0f0f0", stroke="white")
+                .transform_lookup(
+                    lookup="id", from_=alt.LookupData(mapping_df, "id", ["state_name"])
+                )
+                .encode(tooltip=["state_name:N"])
+            )
+
+            # Get country level data
+            plot_df = df.groupby(["city", "state_id"]).agg(["mean"])
+            plot_df.columns = [c[0] for c in plot_df.columns]
+            plot_df = plot_df.reset_index()
+
+        # Color Selected Cities
+        if multi:
+
+            # Create Cities Layer
+            cities = (
+                alt.Chart(plot_df)
+                .mark_circle()
+                .encode(
+                    longitude="lng:Q",
+                    latitude="lat:Q",
+                    size=alt.Size(
+                        f"{category}_per_100k:Q",
+                        # legend=alt.Legend(title=None),
+                        title=f"Avg {config['title']} per 100K",
+                    ),
+                    color=alt.condition(
+                        alt.FieldOneOfPredicate(field="city", oneOf=selected),
+                        alt.value(config["color"]),
+                        alt.value("#DCDCDC"),
+                    ),
+                    tooltip=[
+                        "city:N",
+                        "state_id:N",
+                        f"{config['column']}:Q",
+                        f"{category}_per_100k:Q",
+                    ],
+                )
+            )
+
+            return (
+                # Layer Cities on Background
+                alt.layer(background, cities)
+                .configure_view(stroke=None)
+                .project("albersUsa")
+                .properties(width="container", height=500)
+            )
+
+        # Color All Cities
+
+        # Create Cities Layer
+        cities = (
+            alt.Chart(plot_df)
+            .mark_circle()
+            .encode(
+                longitude="lng:Q",
+                latitude="lat:Q",
+                size=alt.Size(
+                    f"{category}_per_100k:Q",
+                    # legend=alt.Legend(title=None),
+                    title=f"Avg {config['title']} per 100K",
+                ),
+                color=alt.value(config["color"]),
+                tooltip=[
+                    "city:N",
+                    "state_id:N",
+                    f"{config['column']}:Q",
+                    f"{category}_per_100k:Q",
+                ],
+            )
+        )
+        return (
+            # Layer Cities on Background
+            alt.layer(background, cities)
+            .configure_view(stroke=None)
+            .project("albersUsa")
+            .properties(width="container", height=500)
+        )
 
 
 app = App(app_ui, server)

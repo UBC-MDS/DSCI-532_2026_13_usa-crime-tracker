@@ -16,7 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added reset filters button
 - Added note explaining aggregation when multiple cities are selected
 - Improved readability of KPI values with comma formatting
- 
+- LLM interactivity for filtering dashboard using querychat.
+- Download data button to download LLM filtered Dataframes.
+
 ### Changed
 - Updated the violet crime filter range to use the per 100k value instead of total 
 - Updated the line plot to use the per 100k value instead of total
@@ -27,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
 ### Known Issues
 - Filter values don't update dynamically based on other filter selections. Will be addressed in the next release.
+- Switching tabs back to dashboard from AI Assistant causes KPI boxes to stretch over entire screen. Cause is unkown currently, but will be looked into for next release.
 
 ### Reflection
 - The KPI outputs are now fixed to the top right of the screen for better visibility and accessibility as users interact with the filters and scroll through the dashboard.
