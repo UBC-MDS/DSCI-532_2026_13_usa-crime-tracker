@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-03-08
+
+### Added
+- Fixed positioning of KPI outputs, navigation bar and filter header for a better user experience through css.
+- Added adaptive position for the fixed KPI to adjust when filters are open or closed.
+- Added a default value for date slider to show last 5 years of data applied across the dashboard.
+- KPI comparison now shows % change vs previous years
+- Color indicators added for KPI comparisons (red = increase in crime, green = decrease)
+- Added reset filters button
+- Added note explaining aggregation when multiple cities are selected
+- Improved readability of KPI values with comma formatting
+- LLM interactivity for filtering dashboard using querychat.
+- Download data button to download LLM filtered Dataframes.
+
+### Changed
+- Updated the violet crime filter range to use the per 100k value instead of total 
+- Updated the line plot to use the per 100k value instead of total
+- Moved title to Navigation bar for better visibility and to free up space for the KPI outputs.
+- Crime change table now updates based on selected crime category and improved to show the change as a percentage. 
+- Table title now updates based on selected crime type and year range
+- Dashboard title now reflects selected crime type and year range
+  
+### Known Issues
+- Filter values don't update dynamically based on other filter selections. Will be addressed in the next release.
+- KPI trend descriptions could be more intuitive and opinionated to quickly convey insights. Will be enhanced in the next release.
+- Switching tabs back to dashboard from AI Assistant causes KPI boxes to stretch over entire screen. Cause is unkown currently, but will be looked into for next release.
+
+### Reflection
+- The KPI outputs are now fixed to the top right of the screen for better visibility and accessibility as users interact with the filters and scroll through the dashboard.
+- We have a default date range applied to give an opinioned starting point for users to explore recent crime trends, while still allowing them to adjust the range as needed.
+- Enhanced visual comprehension through colour and text components to better highlight key insights and trends in the data.
+- AI Assistant component added to the dashboard to provide users with an interactive way to ask questions and get insights from the data in natural language, enhancing user engagement and accessibility of insights.
+
 ## [0.2.0] - 2026-02-28
 
 ### Added

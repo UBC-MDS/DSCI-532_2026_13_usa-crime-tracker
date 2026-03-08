@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - seaborn=0.13.2
-  - shiny=1.4.0
+  - shiny
   - matplotlib=3.10.8
   - pandas=3.0.0
   - python=3.12
@@ -11,4 +11,9 @@ dependencies:
   - shinywidgets
   - vega_datasets
   - anywidget
+  - openai
+  - anthropic
+  - duckdb
+  - python-dotenv
+  - tiktoken
 prefix: /Users/devon/miniforge3/envs/usa-crime-tracker
