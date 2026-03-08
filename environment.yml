@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - seaborn=0.13.2
-  - shiny=1.4.0
+  - shiny
   - matplotlib=3.10.8
   - pandas=3.0.0
   - python=3.12
