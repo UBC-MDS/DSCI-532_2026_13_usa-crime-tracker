@@ -11,8 +11,6 @@ import altair as alt
 from shinywidgets import output_widget, render_altair
 from vega_datasets import data
 
-load_dotenv(Path(__file__).parent.parent / ".env")
-github_key = os.environ.get("GITHUB_TOKEN")
 
 # Load and Clean Raw Crime Data
 df_raw = pd.read_csv("data/raw/crime_rate_data_raw.csv").drop(columns=["source", "url"])
@@ -138,6 +136,9 @@ max_pop = int(df_merged["total_pop"].max())
 # FIX API KEY
 # os.environ["ANTHROPIC_API_KEY"] =
 
+# load_dotenv(Path(__file__).parent.parent / ".env")
+os.environ["OPENAI_BASE_URL"] = "https://models.inference.ai.azure.com"
+github_key = os.environ.get("GITHUB_TOKEN")
 
 # ── querychat (Tab 1)
 qc = querychat.QueryChat(
