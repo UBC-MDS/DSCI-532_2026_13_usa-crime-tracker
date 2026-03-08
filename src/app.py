@@ -128,6 +128,79 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 MAX_TOKENS = 300   # token limit
 
+import querychat
+
+#FIX API KEY
+#os.environ["ANTHROPIC_API_KEY"] =
+
+
+# ── querychat (Tab 1) 
+qc = querychat.QueryChat(
+    df_merged.copy(),
+    "Statistics",
+    greeting="""👋 Ask me anything about US crime statistics.
+
+* <span class="suggestion">Filter to New York City only</span>
+* <span class="suggestion">Which city has the highest crime rate?</span>
+""",
+
+    data_description="""
+Violent Crime Statistics in the USA (for 57 cities from 32 states).
+- state_id: state id code, for example: CA for california
+- year: The year for a given set of crime statistics for a given city
+- city: A city in the USA
+- total_pop: total population of a given city in a given year
+- homs_sum: total number of homicides for a given city in a given year
+- rape_sum: total number of rapes for a given city in a given year
+- rob_sum: total number of robberies for a given city in a given year
+- agg_ass_sum: total number of aggravated assaults for a given city in a given year
+- violent_crime: total number of violent crimes for a given city in a given year
+- months_reported: number of months of the year reported in the crime stats
+- violent_per_100k: number of violent crimes for a given city in a given year per 100k people
+- homs_per_100k: number of homicides for a given city in a given year per 100k people
+- rape_per_100k: number of rapes for a given city in a given year per 100k people
+- rob_per_100k: number of robberies for a given city in a given year per 100k people
+- agg_ass_per_100k: number of aggravated assaults for a given city in a given year per 100k people
+- lat: latitude of a given city
+- lng: longitude of a given city
+""",
+    extra_instructions="""
+Use this dictionary to map State names to state_id's for filtering.
+If someone asks for "California" you can use this to find the state code "CA" to filter state_id on:
+state_mapping = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+    "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho",
+    "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
+    "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi",
+    "MO": "Missouri", "MT": "Montana", "NE": "Nebraska", "NV": "Nevada",
+    "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico", "NY": "New York",
+    "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma",
+    "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
+    "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
+    "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
+}
+""",
+    client="anthropic/claude-haiku-4-5-20251001"
+    #client=ChatGithub(model="gpt-4.1-mini"),
+)
+    
+    # # Commented out LLM frontend UI code
+    # ui.nav_panel(
+    #     "LLM Chat",
+    #     ui.layout_sidebar(
+    #         qc.sidebar(),
+    #         ui.card(
+    #             ui.card_header(ui.output_text("chat_title")),
+    #             ui.output_data_frame("chat_table"),
+    #             fill=True,
+    #         ),
+    #         fillable=True,
+    #     ),
+    # )
+
 app_ui = ui.page_navbar(
     # PAGE 1: Dashboard
     ui.nav_panel(
@@ -824,6 +897,17 @@ def server(input, output, session):
     @render.data_frame
     def ai_dataframe_output():
         return filtered_df()
+
+    # ── Tab 1: querychat 
+    qc_vals = qc.server()
+
+    @render.text
+    def chat_title():
+        return qc_vals.title() or "US Crime dataset"
+
+    @render.data_frame
+    def chat_table():
+        return qc_vals.df()
 
 
 
