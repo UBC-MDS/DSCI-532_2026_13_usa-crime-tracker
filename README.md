@@ -6,7 +6,43 @@ DSCI 532 Dashboard Projects
 Moving to a new country presents many challenges. One key factor that new immigrants must consider is safety. The USA Crime Tracker Dashboard is an interactive Shiny application that enables users to explore historical crime trends across the United States of America. Through coordinated visualizations and summary metrics, the app helps users identify geographic patterns, temporal trends, and relative crime risk to empower immigrants in making informed decisions about their safety when moving to the USA.
 
 Link to Published Stable Dashboard: <https://019ca5bd-b008-a68f-3889-89a1f04e0011.share.connect.posit.cloud/>
+
 Link to Published Preview Dashboard: <https://019ca5be-a481-ae37-df72-5e656d070507.share.connect.posit.cloud/>
+
+# Users
+
+Moving to a new country comes with many important decisions, and safety is often one of the top concerns for immigrants. The USA Crime Tracker Dashboard is an interactive Shiny application that allows users to explore historical crime trends across reporting cities in the United States. Through dynamic visualizations and key summary metrics, the dashboard highlights geographic patterns, changes over time, and relative crime rates. By presenting the data in an accessible and interactive format, the app helps prospective immigrants make more informed decisions about their safety when relocating to the U.S.
+
+## DEMO
+
+Below is a gif demo on how to use the dashboard: 
+![Demo of the app](img/demo.gif)
+
+# AI Assistant
+
+The dashboard includes an AI-powered assistant that allows users to ask questions about the crime dataset using natural language.
+
+The assistant uses the Anthropic Claude API to generate responses to user prompts. Users can ask questions such as:
+- "Filter to Los Angeles only"
+- "Which cities have the highest crime rates?"
+- "How has crime changed over the last five years?"
+
+The AI assistant processes the query and returns a text response, while also displaying the filtered dataset used by the dashboard.
+
+### Environment Variable Requirement
+
+To use the AI assistant, an Anthropic API key must be provided as an environment variable:
+
+```bash
+ANTHROPIC_API_KEY
+```
+
+The application accesses this key in the code using:
+```python
+os.getenv("ANTHROPIC_API_KEY")
+```
+
+When deploying the application (e.g., on Posit Connect Cloud), this variable must be added to the deployment's **Environment Variables** so the AI assistant can communicate with the Anthropic API.
 
 # Running the App Locally 
 
@@ -40,15 +76,6 @@ In the terminal, enter:
 ```bash
 Ctrl + C
 ```
-
-# Users
-
-Moving to a new country comes with many important decisions, and safety is often one of the top concerns for immigrants. The USA Crime Tracker Dashboard is an interactive Shiny application that allows users to explore historical crime trends across reporting cities in the United States. Through dynamic visualizations and key summary metrics, the dashboard highlights geographic patterns, changes over time, and relative crime rates. By presenting the data in an accessible and interactive format, the app helps prospective immigrants make more informed decisions about their safety when relocating to the U.S.
-
-## DEMO
-
-Below is a gif demo on how to use the dashboard: 
-![Demo of the app](img/demo.gif)
 
 # Contributors
  If you are looking to contribute ot the project please refer to the guidelines in this document: 
