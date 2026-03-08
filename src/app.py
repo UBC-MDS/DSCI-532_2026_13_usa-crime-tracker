@@ -11,7 +11,8 @@ import altair as alt
 from shinywidgets import output_widget, render_altair
 from vega_datasets import data
 
-load_dotenv(Path(__file__).parent.parent / ".env")
+# load_dotenv(Path(__file__).parent.parent / ".env")
+github_key = os.environ.get("GITHUB_TOKEN")
 
 # Load and Clean Raw Crime Data
 df_raw = pd.read_csv("data/raw/crime_rate_data_raw.csv").drop(columns=["source", "url"])
@@ -137,11 +138,12 @@ max_pop = int(df_merged["total_pop"].max())
 # FIX API KEY
 # os.environ["ANTHROPIC_API_KEY"] =
 
+gh_client = ChatGithub(model="gpt-4.1-mini", api_key=github_key)
 
 # ── querychat (Tab 1)
 qc = querychat.QueryChat(
     df_merged.copy(),
-    "Statistics",
+    "statistics",
     greeting="""👋 Ask me anything about US crime statistics.
 
 * <span class="suggestion">Filter to Los Angeles only</span>
@@ -187,7 +189,7 @@ state_mapping = {
 }
 """,
     # client="anthropic/claude-haiku-4-5-20251001",
-    client=ChatGithub(model="gpt-4.1-mini"),
+    client=gh_client,
 )
 
 # # Commented out LLM frontend UI code
@@ -1253,7 +1255,7 @@ def server(input, output, session):
     #     return qc_vals.df()
 
     # --- Tab 2: querychat ---
-    qc_vals = qc.server()
+    qc_vals = qc.server("statistics")
 
     @render.text
     def chat_title():
