@@ -11,7 +11,9 @@ dependencies:
   - shinywidgets
   - vega_datasets
   - anywidget
-  - pip
-  - pip:
-      - anthropic
-#prefix: /Users/devon/miniforge3/envs/usa-crime-tracker
+  - openai
+  - anthropic
+  - duckdb
+  - python-dotenv
+  - tiktoken
+prefix: /Users/devon/miniforge3/envs/usa-crime-tracker
