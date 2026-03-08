@@ -11,7 +11,7 @@ import altair as alt
 from shinywidgets import output_widget, render_altair
 from vega_datasets import data
 
-load_dotenv(Path(__file__).parent.parent / ".env")
+load_dotenv(Path(__file__).parent / ".env")
 
 # Load and Clean Raw Crime Data
 df_raw = pd.read_csv("data/raw/crime_rate_data_raw.csv").drop(columns=["source", "url"])
