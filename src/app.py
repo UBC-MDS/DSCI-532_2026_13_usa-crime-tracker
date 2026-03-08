@@ -188,7 +188,7 @@ state_mapping = {
 }
 """,
     # client="anthropic/claude-haiku-4-5-20251001",
-    client=ChatGithub(model="gpt-4.1-mini"),
+    client=ChatGithub(model="gpt-4.1-mini", api_key=github_key),
 )
 
 # # Commented out LLM frontend UI code
