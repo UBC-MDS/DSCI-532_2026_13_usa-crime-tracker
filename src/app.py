@@ -138,7 +138,6 @@ max_pop = int(df_merged["total_pop"].max())
 # FIX API KEY
 # os.environ["ANTHROPIC_API_KEY"] =
 
-gh_client = ChatGithub(model="gpt-4.1-mini", api_key=github_key)
 
 # ── querychat (Tab 1)
 qc = querychat.QueryChat(
@@ -189,7 +188,7 @@ state_mapping = {
 }
 """,
     # client="anthropic/claude-haiku-4-5-20251001",
-    client=gh_client,
+    client=ChatGithub(model="gpt-4.1-mini"),
 )
 
 # # Commented out LLM frontend UI code
@@ -1255,7 +1254,7 @@ def server(input, output, session):
     #     return qc_vals.df()
 
     # --- Tab 2: querychat ---
-    qc_vals = qc.server("statistics")
+    qc_vals = qc.server()
 
     @render.text
     def chat_title():
