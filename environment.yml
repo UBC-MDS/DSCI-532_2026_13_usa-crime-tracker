@@ -11,4 +11,7 @@ dependencies:
   - shinywidgets
   - vega_datasets
   - anywidget
-prefix: /Users/devon/miniforge3/envs/usa-crime-tracker
+  - pip
+  - pip:
+      - anthropic
+#prefix: /Users/devon/miniforge3/envs/usa-crime-tracker

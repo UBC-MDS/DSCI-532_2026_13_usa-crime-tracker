@@ -280,6 +280,15 @@ app_ui = ui.page_navbar(
                         int(df_raw["violent_crime"].max()),
                     ),
                 ),
+
+                ui.hr(),
+
+                ui.input_action_button(
+                    "reset_filters",
+                    "Reset Filters",
+                    class_="btn btn-outline-danger"
+                ),
+
             ),
             ui.tags.style(
                 """
@@ -435,9 +444,36 @@ app_ui = ui.page_navbar(
                 {"class": "fixed-main-header"},
                 # KPI and Summary
                 ui.layout_columns(
-                    ui.value_box("Total Crimes", ui.output_text("total_crimes")),
-                    ui.value_box("Crime Rate (per 100k)", ui.output_text("crime_rate")),
-                    ui.value_box("Population", ui.output_text("pop_kpi")),
+                    ui.value_box(
+                        "Total Crimes",
+                        ui.div(
+                            ui.output_text("total_crimes"),
+                            ui.div(
+                                {"style": "font-size:12px; color:gray;"},
+                                ui.output_ui("total_crimes_change")
+                            )
+                    )               
+                ),
+                    ui.value_box("Crime Rate (per 100k)",
+                                ui.div(
+                                    ui.output_text("crime_rate"),
+                                    ui.div(
+                                    {"style": "font-size:12px; color:gray;"},
+                                    ui.output_ui("crime_rate_change")
+                                )
+                        )
+                    )
+                ,                                  
+                    ui.value_box(
+                        "Population",
+                        ui.div(
+                            ui.output_text("pop_kpi"),
+                            ui.div(
+                                {"style": "font-size:12px; color:gray;"},
+                                ui.output_ui("pop_change")
+                            )
+                        )
+                    ),
                     # ADDED: KPI — MOST COMMON CRIME
                     ui.card(
                         ui.h5("Most Common Crime"), ui.output_text("kpi_most_common")
@@ -462,14 +498,20 @@ app_ui = ui.page_navbar(
                 ui.column(
                     12,
                     ui.card(
-                        ui.h5("Change in Crime Rate"),
-                        ui.output_data_frame("kpi_change_table"),
-                    ),
-                ),
+                        ui.h5(ui.output_text("change_table_title")),
+                        ui.div(
+                            {"style": "font-size:12px; color:gray; margin-top:4px;"},
+                            ui.output_text("aggregation_note")),
+                        ui.output_data_frame("kpi_change_table")
+                    )
+                )
             ),
-            ui.hr(),
-        ),
+            
+            ui.hr()
+        )
+
     ),
+
     # PAGE 2: AI Assistant
     ui.nav_panel(
         "AI Assistant",
@@ -551,7 +593,7 @@ app_ui = ui.page_navbar(
         #     ),
         # ),
     ),
-    title="USA Crime Dashboard",
+    title=ui.output_text("dashboard_title"),
     position="fixed-top",
     bg="#2c4750",  # Background color (Hex code)
     inverse=True,  # Light text for dark backgrounds
@@ -613,11 +655,76 @@ def server(input, output, session):
 
     @render.text
     def total_crimes():
+
         df = filtered_df().copy()
         latest_year = df["year"].max()
         df_latest = df[df["year"] == latest_year]
-        tot = int(df_latest["violent_crime"].sum())
-        return tot
+
+        category = input.crime_category()
+
+        if category == "violent":
+            crime_col = "violent_crime"
+
+        elif category == "homs":
+            crime_col = "homs_sum"
+
+        elif category == "rape":
+            crime_col = "rape_sum"
+
+        elif category == "rob":
+            crime_col = "rob_sum"
+
+        elif category == "agg_ass":
+            crime_col = "agg_ass_sum"
+
+        tot = int(df_latest[crime_col].sum())
+
+        return f"{tot:,}"
+        
+    
+    @render.text
+    def total_crimes_change():
+
+        df = filtered_df().copy()
+        if df.empty:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+        category = input.crime_category()
+
+        if category == "violent":
+            crime_col = "violent_crime"
+        elif category == "homs":
+            crime_col = "homs_sum"
+        elif category == "rape":
+            crime_col = "rape_sum"
+        elif category == "rob":
+            crime_col = "rob_sum"
+        elif category == "agg_ass":
+            crime_col = "agg_ass_sum"
+
+        df_latest = df[df["year"] == yr_max]
+        df_prev = df[(df["year"] >= yr_min) & (df["year"] < yr_max)]
+
+        latest_total = df_latest[crime_col].sum()
+
+        prev_yearly_total = (
+            df_prev.groupby("year")[crime_col]
+            .sum()
+        )
+
+        prev_avg_total = prev_yearly_total.mean()
+
+        pct_change = ((latest_total - prev_avg_total) / prev_avg_total) * 100
+        pct_change = round(pct_change, 2)
+
+        color = "red" if pct_change > 0 else "green"
+        sign = "+" if pct_change > 0 else ""
+
+        return ui.span(
+            f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg",
+            style=f"font-size:12px; color:{color};"
+        )
 
     @render.text
     def crime_rate():
@@ -625,7 +732,20 @@ def server(input, output, session):
         latest_year = df["year"].max()
         df_latest = df[df["year"] == latest_year]
 
-        total_crime = df_latest["violent_crime"].sum()
+        category = input.crime_category()
+
+        if category == "violent":
+            crime_col = "violent_crime"
+        elif category == "homs":
+            crime_col = "homs_sum"
+        elif category == "rape":
+            crime_col = "rape_sum"
+        elif category == "rob":
+            crime_col = "rob_sum"
+        elif category == "agg_ass":
+            crime_col = "agg_ass_sum"
+
+        total_crime = df_latest[crime_col].sum()
         total_pop = df_latest.drop_duplicates(["city", "state_id"])["total_pop"].sum()
         rate = int((total_crime / total_pop) * 100000)
 
@@ -638,7 +758,43 @@ def server(input, output, session):
         df_latest = df[df["year"] == latest_year]
         duplicates_cities = df_latest.drop_duplicates(subset=["city", "state_id"])
         pop = int(duplicates_cities["total_pop"].sum())
-        return pop
+        
+        return f"{pop:,}"
+    
+    @render.text
+    def pop_change():
+
+        df = filtered_df().copy()
+        if df.empty:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+
+        # latest year
+        df_latest = df[df["year"] == yr_max]
+
+        # previous years
+        df_prev = df[(df["year"] >= yr_min) & (df["year"] < yr_max)]
+
+        latest_pop = df_latest.drop_duplicates(["city", "state_id"])["total_pop"].sum()
+
+        prev_yearly_pop = (
+            df_prev.groupby("year")
+            .apply(lambda x: x.drop_duplicates(["city", "state_id"])["total_pop"].sum())
+        )
+
+        prev_avg_pop = prev_yearly_pop.mean()
+
+        pct_change = ((latest_pop - prev_avg_pop) / prev_avg_pop) * 100
+        pct_change = round(pct_change, 2)
+
+        color = "green" if pct_change > 0 else "red"
+        sign = "+" if pct_change > 0 else ""
+
+        return ui.span(
+            f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg",
+            style=f"font-size:12px; color:{color};"
+        )
 
     @render.text
     def debug_line_plot():
@@ -889,7 +1045,8 @@ def server(input, output, session):
         }
 
         return max(crime_totals, key=crime_totals.get)
-
+    
+    
     @output
     @render.text
     def kpi_most_common():
@@ -903,26 +1060,175 @@ def server(input, output, session):
             return pd.DataFrame({"message": ["No data available"]})
 
         # Compute average violent crime rate per year
+        category = input.crime_category()
+
+        if category == "violent":
+            rate_col = "violent_per_100k"
+            title = "Violent Crime"
+
+        elif category == "homs":
+            rate_col = "homs_per_100k"
+            title = "Homicide"
+
+        elif category == "rape":
+            rate_col = "rape_per_100k"
+            title = "Rape"
+
+        elif category == "rob":
+            rate_col = "rob_per_100k"
+            title = "Robbery"
+
+        elif category == "agg_ass":
+            rate_col = "agg_ass_per_100k"
+            title = "Aggravated Assault"
+
         yearly = (
-            d.groupby("year")["violent_per_100k"]
-            .mean()
+            d.groupby("year")
+            .agg({
+            rate_col: "mean"
+            })
             .reset_index()
             .sort_values("year")
         )
 
-        # ROUND ALL NUMERIC COLUMNS TO 2 DECIMAL PLACES
-        yearly["previous"] = round(yearly["violent_per_100k"].shift(1), 2)
-        yearly["change"] = round(yearly["violent_per_100k"] - yearly["previous"], 2)
-        yearly["violent_per_100k"] = round(yearly["violent_per_100k"], 2)
-
+        # ROUND ALL NUMERIC COLUMNS TO 2 DECIMAL PLACES 
+        yearly["previous"] = round(yearly["violent_per_100k"].shift(1),2)
+        yearly["change"] = round(yearly["violent_per_100k"] - yearly["previous"],2)
+        yearly["violent_per_100k"] = round(yearly["violent_per_100k"],2)
+        
         return yearly
+    
+    @output
+    @render.text
+    def change_table_title():
+        category = input.crime_category()
+        yr_min, yr_max = input.year_range()
 
-    # ----- TAB 2: LLM Chat -----
+        if category == "violent":
+            title = "Violent Crime"
+        elif category == "homs":
+            title = "Homicide"
+        elif category == "rape":
+            title = "Rape"
+        elif category == "rob":
+            title = "Robbery"
+        elif category == "agg_ass":
+            title = "Aggravated Assault"
 
-    # @output
-    # @render.data_frame
-    # def kpi_change_table():
-    #     return crime_change_table()
+        return f"Change in {title} Rate ({yr_min}-{yr_max})"
+    
+    @render.text
+    def aggregation_note():
+        selected = list(input.cities())
+
+        if selected and "All" not in selected and len(selected) > 1:
+            return "Note: Table values are aggregated across selected cities."
+
+        return ""
+
+    @output
+    @render.text
+    def crime_rate_change():
+
+        df = filtered_df().copy()
+        if df.empty:
+            return ""
+
+        category = input.crime_category()
+
+        if category == "violent":
+            crime_col = "violent_crime"
+            title = "Violent Crime"
+
+        elif category == "homs":
+            crime_col = "homs_sum"
+            title = "Homicide"
+
+        elif category == "rape":
+            crime_col = "rape_sum"
+            title = "Rape"
+
+        elif category == "rob":
+            crime_col = "rob_sum"
+            title = "Robbery"
+
+        elif category == "agg_ass":
+            crime_col = "agg_ass_sum"
+            title = "Aggravated Assault"
+
+        yr_min, yr_max = input.year_range()
+
+        df_latest = df[df["year"] == yr_max]
+        df_prev = df[(df["year"] >= yr_min) & (df["year"] < yr_max)]
+
+        latest_crime = df_latest[crime_col].sum()
+        latest_pop = df_latest.drop_duplicates(["city","state_id"])["total_pop"].sum()
+        latest_rate = (latest_crime / latest_pop) * 100000
+
+        prev_crime = df_prev[crime_col].sum()
+        prev_pop = df_prev.drop_duplicates(["city","state_id"])["total_pop"].sum()
+        prev_rate = (prev_crime / prev_pop) * 100000
+        prev_rate = prev_rate / (yr_max - yr_min)
+
+        pct_change = ((latest_rate - prev_rate) / prev_rate) * 100
+        pct_change = round(pct_change, 2)
+
+        color = "red" if pct_change > 0 else "green"
+        sign = "+" if pct_change > 0 else ""
+
+        return ui.span(
+            f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg",
+            style=f"font-size:12px; color:{color};"
+        )
+
+
+    @render.text
+    def dashboard_title():
+        yr_min, yr_max = input.year_range()
+        return f"USA Crime Dashboard ({yr_min}–{yr_max})" 
+
+
+    @reactive.Effect #Used Ai for help figuring out how to do reset the filter
+    @reactive.event(input.reset_filters)
+    def _():
+
+        ui.update_slider(
+            "year_range",
+            value=[int(df_merged["year"].max()) - 4, int(df_merged["year"].max())]
+        )
+
+        ui.update_slider(
+            "population_range",
+            value=(min_pop, max_pop)
+        )
+
+        ui.update_select(
+            "state_id",
+            selected=0
+        )
+
+        ui.update_selectize(
+            "cities",
+            selected=["All"]
+        )
+
+        ui.update_select(
+            "crime_category",
+            selected="violent"
+        )
+
+        ui.update_slider(
+            "violent_range",
+            value=(
+                int(df_raw["violent_crime"].min()),
+                int(df_raw["violent_crime"].max())
+            )
+        
+    @output
+    @render.data_frame
+    def kpi_change_table():
+        return crime_change_table()     
+
 
     # @reactive.Effect
     # @reactive.event(input.ai_send_btn)
@@ -1206,6 +1512,7 @@ def server(input, output, session):
             .project("albersUsa")
             .properties(width="container", height=500)
         )
+
 
 
 app = App(app_ui, server)

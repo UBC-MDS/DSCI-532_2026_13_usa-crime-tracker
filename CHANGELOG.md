@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
 ### Known Issues
 - Filter values don't update dynamically based on other filter selections. Will be addressed in the next release.
+- KPI trend descriptions could be more intuitive and opinionated to quickly convey insights. Will be enhanced in the next release.
 - Switching tabs back to dashboard from AI Assistant causes KPI boxes to stretch over entire screen. Cause is unkown currently, but will be looked into for next release.
 
 ### Reflection
