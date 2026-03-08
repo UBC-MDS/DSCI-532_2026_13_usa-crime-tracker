@@ -129,7 +129,6 @@ client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 MAX_TOKENS = 300   # token limit
 
 app_ui = ui.page_navbar(
-
     # PAGE 1: Dashboard
     ui.nav_panel(
         "Dashboard",
@@ -205,24 +204,57 @@ app_ui = ui.page_navbar(
             ),
 
             ui.tags.style("""
+                /* Make navbar a flex container to separate title and nav items */
+                .navbar {
+                    display: flex !important;
+                    align-items: center !important;
+                    width: 100% !important;
+                }
+
+                /* Place navbar title on the left and keep current text styling */
+                .navbar-brand {
+                    position: static;
+                    transform: none;
+                    flex-shrink: 0;
+                    font-size: 1.6rem;
+                    font-weight: 600;
+                }
+
+                /* Push navbar collapse (contains both buttons) to the right */
+                .navbar-collapse {
+                    margin-left: auto !important;
+                    width: auto !important;
+                    flex-grow: 0 !important;
+                }
+
+                .navbar-nav {
+                    display: flex !important;
+                    flex-direction: row !important;
+                    margin-left: 0 !important;
+                }
+                
+                /* Base styles for the sidebar collapse toggle button */
                 .bslib-sidebar-layout > .collapse-toggle {
                     position: fixed;
                     right: auto !important;
                     z-index: 1031;
                 }
 
+                /* Position collapse button when sidebar is expanded */
                 .bslib-sidebar-layout > .collapse-toggle[aria-expanded="true"] {
-                    top: 78px !important;
+                    top: 68px !important;
                     left: calc(var(--_sidebar-width, 250px) - 40px) !important;
                     transform: none;
                 }
 
+                /* Position collapse button when sidebar is collapsed */
                 .bslib-sidebar-layout > .collapse-toggle[aria-expanded="false"] {
                     top: 50% !important;
                     left: 10px !important;
                     transform: translateY(-50%);
                 }
                 
+                /* Fix sidebar position and make it scrollable */
                 .bslib-sidebar-layout > .sidebar {
                     position: fixed;
                     top: 56px;
@@ -233,23 +265,35 @@ app_ui = ui.page_navbar(
                     overflow-x: hidden;
                 }
 
+                /* Keep "Filters" header fixed at top of sidebar */
                 .bslib-sidebar-layout > .sidebar .sidebar-fixed-header {
-                    position: sticky;
-                    top: 0;
+                    position: fixed;
+                    top: 56px;
+                    left: 25px;
+                    width: calc(var(--_sidebar-width, 250px) - 30px);
                     z-index: 1030;
                     background: white;
                     padding-top: 0.75rem;
+                    padding-bottom: 0.75rem;
                 }
 
+                /* Remove default margin from "Filters" heading */
                 .bslib-sidebar-layout > .sidebar .sidebar-fixed-header h4 {
                     margin: 0;
                 }
 
+                /* Adjust spacing of horizontal line in header */
                 .bslib-sidebar-layout > .sidebar .sidebar-fixed-header hr {
                     margin-top: 0.75rem;
                     margin-bottom: 0;
                 }
                 
+                /* Add spacing below fixed header to prevent content overlap */
+                .bslib-sidebar-layout > .sidebar > :not(.sidebar-fixed-header) {
+                    margin-top: 25px;
+                }
+                
+                /* Style the fixed KPI header section */
                 .fixed-main-header {
                     position: fixed;
                     z-index: 1020;
@@ -260,9 +304,15 @@ app_ui = ui.page_navbar(
                     box-sizing: border-box;
                 }
 
+                /* Remove default margins from h1 in fixed header */
                 .fixed-main-header h1 {
                     margin-top: 0;
                     margin-bottom: 0.2rem;
+                }
+
+                /* Add top offset for AI Assistant tab under fixed navbar */
+                .ai-assistant-offset {
+                    margin-top: 56px;
                 }
             """),
 
@@ -274,13 +324,13 @@ app_ui = ui.page_navbar(
 
                     if (!header || !main) return;
 
-                    const rect = main.getBoundingClientRect();
                     const navHeight = navbar ? navbar.offsetHeight : 56;
+                    const rect = main.getBoundingClientRect();
 
                     header.style.left = rect.left + 'px';
                     header.style.width = rect.width + 'px';
                     header.style.top = navHeight + 'px';
-                    main.style.paddingTop = (header.offsetHeight + 4) + 'px';
+                    main.style.paddingTop = (navHeight + header.offsetHeight + 4) + 'px';
                 }
 
                 window.addEventListener('load', syncFixedMainHeader);
@@ -299,11 +349,9 @@ app_ui = ui.page_navbar(
                     });
                 });
             """),
-
+            # Visualization and Summary Section
             ui.div(
                 {"class": "fixed-main-header"},
-                # Visualization and Summary Section
-                ui.h1("USA Crime Dashboard"),
                 # KPI and Summary
                 ui.layout_columns(
                     ui.value_box("Total Crimes", ui.output_text("total_crimes")),
@@ -350,6 +398,7 @@ app_ui = ui.page_navbar(
     ui.nav_panel(
         "AI Assistant",
         ui.layout_columns(
+            {"class": "ai-assistant-offset"},
             ui.card(
                 ui.h3("AI Assistant"),
 
@@ -375,6 +424,7 @@ app_ui = ui.page_navbar(
             )
         )
     ),
+    title="USA Crime Dashboard",
     position="fixed-top",
 )
 
