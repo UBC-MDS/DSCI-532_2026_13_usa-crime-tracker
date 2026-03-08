@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   
 ### Known Issues
 - Filter values don't update dynamically based on other filter selections. Will be addressed in the next release.
+- KPI trend descriptions could be more intuitive and opinionated to quickly convey insights. Will be enhanced in the next release.
 
 ### Reflection
 - The KPI outputs are now fixed to the top right of the screen for better visibility and accessibility as users interact with the filters and scroll through the dashboard.
@@ -55,12 +56,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added 2 new user stories to filter on population and crime rate.
 - Added links to published stable and preview dashboards to README.md
 - Added m2_spec.md to reports
-- Default 5-year comparison added to KPI cards (Total Crimes, Crime Rate, Population)
-- KPI comparison now shows % change vs previous years
-- Color indicators added for KPI comparisons (red = increase in crime, green = decrease)
-- Added reset filters button
-- Added note explaining aggregation when multiple cities are selected
-- Improved readability of KPI values with comma formatting
 
 ### Changed
 
@@ -75,10 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reorganized layout so map and line chart serve as the primary analytical views.
 - Changed placement of Change in Crime Rate table to align with line chart analysis view.
 - Updated component structure to better align with implemented job stories and filtering workflow.
-- Crime change table now updates based on selected crime category and improved to show the change as a percentage. 
-- Table title now updates based on selected crime type and year range
-- Dashboard title now reflects selected crime type and year range
-
 
 ### Known Issues
 
