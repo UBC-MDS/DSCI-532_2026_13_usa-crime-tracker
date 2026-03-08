@@ -18,17 +18,29 @@
 | City                             | Input         | ui.input_selectize()                           | —                                           | #2                       |
 | Population                       | Input         | ui.input_slider()                              | —                                           | #6                       |
 | Category                         | Input         | ui.input_select()                              | —                                           | #4                       |
+| Category (chat version)          | Input         | ui.input_select()                              | —                                           | #4                       |
 | Aggregate Crime Column           | Input         | ui.input_slider()                              | —                                           | #7                       |
+| Querychat LLM   (chat)           | Input         | qc.ui()                                        | —                                           | #7                       |
+|  download_button (chat)          | Input         | ui.download_button()                           | —                                           | #7                       |
 | filtered_df                      | Reactive calc | @reactive.calc                                 | input_year, input_region                    | #1, #2, #3, #5, #6, #7   |
 | most_common_crime                | Reactive calc | @reactive.calc                                 | filtered_df                                 | #2, #3, #4               |
 | crime_range_table                | Reactive calc | @reactive.calc                                 | filtered_df                                 | #2, #3, #4, #5, #6, #7   |
-| KPI (Total Crime)                | Output        | @reactive.text; ui.value_box("name"           | ui.output_text(""name_from_server_func""))m, input_year, input_region | #2, #3, #4, #5, #6, #7  |
-| KPI (Crime Rate)                 | Output        | @reactive.text; ui.value_box("name"           | ui.output_text(""name_from_server_func"")), filtered_df | #2, #3, #5    |
-| KPI (population)                 | Output        | @reactive.text; ui.value_box("name"           | ui.output_text(""name_from_server_func"")), filtered_df | #2, #3, #6    |
-| KPI (Most Common Crime)          | Output        | @reactive.text; ui.value_box("name"           | ui.output_text(""name_from_server_func""))   | #2, #3, #4               |
+| chat_filtered_data (chat)        | Reactive calc | @reactive.calc                                 | querychat: qc.server(), chat_table          | #2, #3, #4, #5, #6, #7   |
+| KPI (Total Crime)                | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func""))m, input_year, input_region | #2, #3, #4, #5, #6, #7  |
+| KPI (Crime Rate)                 | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func"")), filtered_df | #2, #3, #5   |
+| KPI (population)                 | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func"")), filtered_df | #2, #3, #6   |
+| KPI (Most Common Crime)          | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func""))  | #2, #3, #4               |
 | KPI (Change in Crime Rate) Table | Output        | @render.data_frame                             |                                             | #2, #3, #5               |
-| Map Graph                        | Output        | @render.widget; ui.ouput_widget("plot_name")   |                                             | #1, #2, #3, #4, #6, #7   |
-| Line graph (Comparision)         | Output        | @render.widget; ui.ouput_widget("plot_name")   | filtered_df                                 | #2, #3, #4, #5, #6, #7   |                         |                          |
+| map_plot  (dashboard)            | Output        | @render.altair; ui.ouput_widget("map_plot")    | merged_df                                   | #1, #2, #3, #4, #6, #7   |
+| line_plot (dashboad)             | Output        | @render.altair; ui.ouput_widget("line_plot")   | filtered_df                                 | #2, #3, #4, #5, #6, #7   | 
+| chat_map_plot  (chat)            | Output        | @render.altair; ui.ouput_widget("chat_map_plot")  | chat_filtered_data()                     | #1, #2, #3, #4, #6, #7   |
+| chat_line_plot (Chat)            | Output        | @render.altair; ui.ouput_widget("chat_line_plot") | chat_filtered_data()                     | #2, #3, #4, #5, #6, #7   |
+| chat_table (chat)                | Output        | @render.data_frame; ui.output_data_frame("chat_table")   |   querychat: qc.server()          | #1, #2, #3, #4, #6, #7   |
+| chat_map_title (chat)            | Output        | @render.text; ui.output_text("chat_map_title") |   chat_filtered_data()                      | #1, #2, #3, #4, #6, #7   |
+| chat_title (chat)                | Output        | @render.text; ui.output_text("chat_title")     |   querychat: qc.server()                    | #1, #2, #3, #4, #6, #7   |
+| download_data (chat)             | Output        | @render.download(filename="filtered_data.csv") |   download_button.                          | #1, #2, #3, #4, #6, #7   |
+
+
 
 # Reactivity Diagram
 
@@ -61,6 +73,8 @@ For the `filtered_df` reactive calculation, we will filter the original dataset 
 For the `most_common_crime` reactive calculation, we will analyze the `filtered_df` dataset to determine which crime category has the highest count for the selected year range. This will allow us to output the most common crime as a KPI.
 
 For the `crime_range_table` reactive calculation, we will analyze the `filtered_df` dataset to calculate the change in crime rates over time for each crime category. This will allow us to output a table that shows how crime rates have changed for each category, which can help users understand trends and patterns in crime over time. Updated the crime table to to calculate the yearly crime rate for the selected crime category over the selected year range. We then compute the year-over-year percentage change in crime rate and display it in a table. This helps users understand how the selected crime category changes over time.
+
+For the `chat_filtered_data` reactive calculation we will analyze the querychat responses to input prompts, to take the filtered data frame, and turn it into a format useful for outputs. This will allow outputs to be filtered using the querychat interface to help users efficiently search and understand trends within the data. Updated the crime table to to calculate the yearly crime rate for the selected crime category over the selected year range. We then compute the year-over-year percentage change in crime rate and display it in a table. This helps users understand how the selected crime category changes over time.
 
 # Future Implementation
 In a future version of the dashboard, we plan to add a comparison feature that identifies the cities with the highest and lowest crime rates based on the currently selected crime category and filters. This would allow users to quickly compare the best- and worst-performing cities for violent crime, homicide, robbery, rape, or aggravated assault. The feature would use the filtered dataset and calculate the crime rate per 100,000 people for each city in the most recent year of the selected range, then display the cities with the maximum and minimum values. This would provide users with a clearer comparison across locations and make the KPI section more informative.
