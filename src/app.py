@@ -383,7 +383,7 @@ app_ui = ui.page_navbar(
                 ui.column(
                     12,
                     ui.card(
-                        ui.h5("Change in Crime Rate"),
+                        ui.h5(ui.output_text("change_table_title")),
                         ui.output_data_frame("kpi_change_table")
                     )
                 )
@@ -769,19 +769,72 @@ def server(input, output, session):
             return pd.DataFrame({"message": ["No data available"]})
 
         # Compute average violent crime rate per year
+        category = input.crime_category()
+
+        if category == "violent":
+            rate_col = "violent_per_100k"
+            title = "Violent Crime"
+
+
+        elif category == "homs":
+            rate_col = "homs_per_100k"
+            title = "Homicide"
+
+        
+
+        elif category == "rape":
+            rate_col = "rape_per_100k"
+            title = "Rape"
+
+            
+
+        elif category == "rob":
+            rate_col = "rob_per_100k"
+            title = "Robbery"
+
+        elif category == "agg_ass":
+            rate_col = "agg_ass_per_100k"
+            title = "Aggravated Assault"
+
         yearly = (
-            d.groupby("year")["violent_per_100k"]
-            .mean()
+            d.groupby("year")
+            .agg({
+            rate_col: "mean"
+            })
             .reset_index()
             .sort_values("year")
-        )
+            )
+        
+        yearly["Change in crime rate (%)"]=round(yearly[rate_col].pct_change(periods=1) * 100,2)
+        yearly[rate_col] = yearly[rate_col].round(3)
 
-        # ROUND ALL NUMERIC COLUMNS TO 2 DECIMAL PLACES 
-        yearly["previous"] = round(yearly["violent_per_100k"].shift(1),2)
-        yearly["change"] = round(yearly["violent_per_100k"] - yearly["previous"],2)
-        yearly["violent_per_100k"] = round(yearly["violent_per_100k"],2)
+        yearly = yearly.rename(columns={
+            "year": "Year",
+            rate_col: f"{title} Rate (per 100k)",
+            "Change in crime rate (%)": f"Change in {title} Rate (%)"
+        })
+
         
         return yearly
+    
+    @output
+    @render.text
+    def change_table_title():
+        category = input.crime_category()
+        yr_min, yr_max = input.year_range()
+
+        if category == "violent":
+            title = "Violent Crime"
+        elif category == "homs":
+            title = "Homicide"
+        elif category == "rape":
+            title = "Rape"
+        elif category == "rob":
+            title = "Robbery"
+        elif category == "agg_ass":
+            title = "Aggravated Assault"
+
+        return f"Change in {title} Rate ({yr_min}-{yr_max})"
 
     @output
     @render.data_frame
