@@ -22,7 +22,7 @@
 | Aggregate Crime Column           | Input         | ui.input_slider()                              | —                                           | #7                       |
 | Querychat LLM   (chat)           | Input         | qc.ui()                                        | —                                           | #7                       |
 |  download_button (chat)          | Input         | ui.download_button()                           | —                                           | #7                       |
-| filtered_df                      | Reactive calc | @reactive.calc                                 | input_year, input_region                    | #1, #2, #3, #5, #6, #7   |
+| filtered_df                      | Reactive calc | @reactive.calc (DuckDB/Parquet query)                                | input_year, input_region                    | #1, #2, #3, #5, #6, #7   |
 | most_common_crime                | Reactive calc | @reactive.calc                                 | filtered_df                                 | #2, #3, #4               |
 | crime_range_table                | Reactive calc | @reactive.calc                                 | filtered_df                                 | #2, #3, #4, #5, #6, #7   |
 | chat_filtered_data (chat)        | Reactive calc | @reactive.calc                                 | querychat: qc.server(), chat_table          | #2, #3, #4, #5, #6, #7   |
@@ -46,7 +46,7 @@
 
 ```mermaid
 flowchart TD
-  A[/input_city_dept/] --> F{{filtered_df}}
+  A[/input_city_dept/] --> F{{filtered_df (DuckDB/Parquet query)}}
   B[/input_population/] --> F
   S[/input_state/] --> F
   C[/input_year/] --> F
@@ -68,7 +68,7 @@ flowchart TD
 
 
 # Calculation Details
-For the `filtered_df` reactive calculation, we will filter the original dataset based on the user’s selections for year, state, city, total crime range, crime category and population filters. This will allow us to create a subset of the data that is relevant to the user’s specific interests and needs. This filtered dataset is used to output the Crime over time line graph and all KPI summaries.
+For the `filtered_df` reactive calculation, the application queries the processed dataset stored in Parquet format using DuckDB through the Ibis interface. User inputs such as year, state, city, population range, crime category, and violent crime range are translated into query filters that are executed directly on the Parquet dataset. This ensures that filtering occurs before the data is loaded into memory, improving performance and reducing unnecessary data transfer. The resulting filtered dataset is then used by downstream visualizations and KPI calculations.
 
 For the `most_common_crime` reactive calculation, we will analyze the `filtered_df` dataset to determine which crime category has the highest count for the selected year range. This will allow us to output the most common crime as a KPI.
 
