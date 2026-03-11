@@ -46,7 +46,7 @@
 
 ```mermaid
 flowchart TD
-  A[/input_city_dept/] --> F{{filtered_df (DuckDB/Parquet query)}}
+  A[/input_city_dept/] --> F{{filtered_df (DuckDB Parquet)}}
   B[/input_population/] --> F
   S[/input_state/] --> F
   C[/input_year/] --> F
