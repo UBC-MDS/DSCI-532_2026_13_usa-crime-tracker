@@ -10,22 +10,21 @@ import pandas as pd
 import altair as alt
 from shinywidgets import output_widget, render_altair
 from vega_datasets import data
+import ibis
 
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-# Load and Clean Raw Crime Data
-df_raw = pd.read_csv("data/raw/crime_rate_data_raw.csv").drop(columns=["source", "url"])
-df_raw = df_raw.rename(columns={"department_name": "city", "ORI": "state_id"})
-df_raw["city"] = df_raw["city"].str.partition(",")[0]
-df_raw["state_id"] = df_raw["state_id"].str[:2]
+# Connect DuckDB with Parquet using ibis
+con = ibis.duckdb.connect()
 
-# Load and Clean US Cities Data
-cities = pd.read_csv("data/raw/uscities_raw.csv")
-cities = cities[cities["state_name"] != "Puerto Rico"]
-cities = cities[["city", "state_id", "lat", "lng"]]
+# Read the parquet file
+merged_table = con.read_parquet(
+    "data/processed/crime_merged.parquet",
+    table_name="crime_data"
+)
 
-# Merge Crime and City Data for Map Plot
-df_merged = pd.merge(df_raw, cities, how="inner", on=["city", "state_id"])
+# Execute once for UI defaults/app setup
+df_merged = merged_table.execute()
 
 # Get all cities
 selected_cities = sorted(df_merged["city"].dropna().unique().tolist())
@@ -273,11 +272,11 @@ app_ui = ui.page_navbar(
                 ui.input_slider(
                     "violent_range",
                     "Violent Crime Range",
-                    min=int(df_raw["violent_per_100k"].min()),
-                    max=int(df_raw["violent_per_100k"].max()),
+                    min=int(df_merged["violent_per_100k"].min()),
+                    max=int(df_merged["violent_per_100k"].max()),
                     value=(
-                        int(df_raw["violent_per_100k"].min()),
-                        int(df_raw["violent_per_100k"].max()),
+                        int(df_merged["violent_per_100k"].min()),
+                        int(df_merged["violent_per_100k"].max()),
                     ),
                 ),
                 ui.hr(),
@@ -601,15 +600,12 @@ app_ui = ui.page_navbar(
 def server(input, output, session):
     @reactive.calc
     def filtered_df():
-        df = df_merged.copy()
+        df = merged_table
 
         # Year filter
         try:
             yr_min, yr_max = input.year_range()
-            # coerce year before comparing
-            df["year"] = pd.to_numeric(df["year"], errors="coerce")
-            df = df.dropna(subset=["year"])
-            df = df[(df["year"] >= yr_min) & (df["year"] <= yr_max)]
+            df = df.filter((df.year >= yr_min) & (df.year <= yr_max))
         except Exception:
             pass
 
@@ -626,25 +622,20 @@ def server(input, output, session):
             df = df[df["city"].isin(selected)]
 
         # Violent range filter
-        df["violent_crime"] = pd.to_numeric(df["violent_crime"], errors="coerce")
-        df = df.dropna(subset=["violent_crime"])
         vmin, vmax = input.violent_range()
-        df = df[(df["violent_crime"] >= vmin) & (df["violent_crime"] <= vmax)]
+        df = df.filter((df.violent_per_100k >= vmin) & (df.violent_per_100k <= vmax))
 
         # Crime category filter
         category = str(input.crime_category())
         config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
         col = config["column"]
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-            df = df.dropna(subset=[col])
+        df = df.filter(getattr(df, col).notnull())
 
         # Population filter
-        if hasattr(input, "population_range") and ("total_pop" in df.columns):
-            pmin, pmax = input.population_range()
-            df = df[(df["total_pop"] >= pmin) & (df["total_pop"] <= pmax)]
+        pmin, pmax = input.population_range()
+        df = df.filter((df.total_pop >= pmin) & (df.total_pop <= pmax))
 
-        return df
+        return df.execute()
 
     @render.text
     def total_crimes():
@@ -1196,8 +1187,8 @@ def server(input, output, session):
         ui.update_slider(
             "violent_range",
             value=(
-                int(df_raw["violent_crime"].min()),
-                int(df_raw["violent_crime"].max()),
+                int(df_merged["violent_crime"].min()),
+                int(df_merged["violent_crime"].max()),
             ),
         )
 
