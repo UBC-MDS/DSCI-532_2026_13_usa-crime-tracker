@@ -17,18 +17,10 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 # Connect DuckDB with Parquet using ibis
 con = ibis.duckdb.connect()
 
-crime_table = con.read_parquet("data/processed/crime_data.parquet", table_name="crime_data")
-cities_table = con.read_parquet("data/processed/cities_data.parquet", table_name="cities_data")
-
-# Lazy merged table
-merged_table = crime_table.left_join(
-    cities_table,
-    [crime_table.city == cities_table.city,
-     crime_table.state_id == cities_table.state_id]
-).select(
-    crime_table,
-    cities_table.lat,
-    cities_table.lng
+# Read the parquet file
+merged_table = con.read_parquet(
+    "data/processed/crime_merged.parquet",
+    table_name="crime_data"
 )
 
 # Execute once for UI defaults/app setup
@@ -1203,8 +1195,8 @@ def server(input, output, session):
         ui.update_slider(
             "violent_range",
             value=(
-                int(df_raw["violent_crime"].min()),
-                int(df_raw["violent_crime"].max()),
+                int(df_merged["violent_crime"].min()),
+                int(df_merged["violent_crime"].max()),
             ),
         )
 

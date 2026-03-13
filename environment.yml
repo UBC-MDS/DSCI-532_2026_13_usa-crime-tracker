@@ -16,4 +16,7 @@ dependencies:
   - duckdb
   - python-dotenv
   - tiktoken
+  - querychat
+  - pip:
+    - ibis-framework[duckdb]
 prefix: /Users/devon/miniforge3/envs/usa-crime-tracker
