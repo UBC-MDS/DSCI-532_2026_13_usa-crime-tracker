@@ -600,15 +600,12 @@ app_ui = ui.page_navbar(
 def server(input, output, session):
     @reactive.calc
     def filtered_df():
-        df = df_merged.copy()
+        df = merged_table
 
         # Year filter
         try:
             yr_min, yr_max = input.year_range()
-            # coerce year before comparing
-            df["year"] = pd.to_numeric(df["year"], errors="coerce")
-            df = df.dropna(subset=["year"])
-            df = df[(df["year"] >= yr_min) & (df["year"] <= yr_max)]
+            df = df.filter((df.year >= yr_min) & (df.year <= yr_max))
         except Exception:
             pass
 
@@ -625,25 +622,20 @@ def server(input, output, session):
             df = df[df["city"].isin(selected)]
 
         # Violent range filter
-        df["violent_crime"] = pd.to_numeric(df["violent_crime"], errors="coerce")
-        df = df.dropna(subset=["violent_crime"])
         vmin, vmax = input.violent_range()
-        df = df[(df["violent_crime"] >= vmin) & (df["violent_crime"] <= vmax)]
+        df = df.filter((df.violent_per_100k >= vmin) & (df.violent_per_100k <= vmax))
 
         # Crime category filter
         category = str(input.crime_category())
         config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
         col = config["column"]
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce")
-            df = df.dropna(subset=[col])
+        df = df.filter(getattr(df, col).notnull())
 
         # Population filter
-        if hasattr(input, "population_range") and ("total_pop" in df.columns):
-            pmin, pmax = input.population_range()
-            df = df[(df["total_pop"] >= pmin) & (df["total_pop"] <= pmax)]
+        pmin, pmax = input.population_range()
+        df = df.filter((df.total_pop >= pmin) & (df.total_pop <= pmax))
 
-        return df
+        return df.execute()
 
     @render.text
     def total_crimes():
