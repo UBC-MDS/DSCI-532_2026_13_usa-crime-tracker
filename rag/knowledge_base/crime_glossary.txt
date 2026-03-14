@@ -1,0 +1,23 @@
+violent_crime is defined as the sum of four offenses: homicide (homs_sum), rape (rape_sum), robbery (rob_sum), and aggravated assault (agg_ass_sum). These four categories follow the FBI’s Uniform Crime Reporting (UCR) definitions.
+
+violent_per_100k is calculated as (violent_crime / total_pop) * 100000. This rate normalizes crime counts across cities of different population sizes and is the standard metric used in UCR comparisons.
+
+months_reported indicates how many months of the year a city submitted crime data. If months_reported is less than 12, the crime totals may underrepresent the true annual count because missing months are not imputed in this dataset.
+
+Homicide counts (homs_sum) include murder and non-negligent manslaughter but exclude negligent manslaughter and justifiable homicide, following UCR definitions.
+
+Robbery (rob_sum) refers to taking or attempting to take anything of value from a person by force or threat of force. It is distinct from burglary, which involves unlawful entry into a structure; burglary is not included in violent_crime.
+
+Aggravated assault (agg_ass_sum) includes attacks intended to inflict severe or aggravated bodily injury, typically involving a weapon or means likely to cause serious harm. Simple assault is not included in this dataset.
+
+Rape (rape_sum) follows the UCR “revised definition,” which includes penetration without consent regardless of gender. This definition expanded in 2013, so comparisons across years should be interpreted cautiously.
+
+The dataset includes 57 cities from 32 states. Cities vary widely in population size, which is why rate-based metrics (per 100k) are more reliable for comparison than raw crime counts.
+
+Some cities have missing geographic coordinates (lat, lng). When coordinates are missing, those cities will not appear on the map but still appear in tables and charts.
+
+Crime rates can fluctuate due to population changes. A city with a declining population may show an increased violent_per_100k even if the number of crimes stays constant.
+
+Cities with fewer than 12 months_reported should not be compared directly to cities with full-year reporting when analyzing trends or ranking cities by crime rate.
+
+The FBI UCR program transitioned to NIBRS reporting in 2021, which changed how some offenses are categorized. This dataset uses UCR-style summary reporting, so comparisons to NIBRS-based sources may differ.

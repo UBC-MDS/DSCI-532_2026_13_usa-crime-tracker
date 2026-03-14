@@ -12,6 +12,48 @@ from shinywidgets import output_widget, render_altair
 from vega_datasets import data
 import ibis
 
+from pathlib import Path
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
+
+# Load KB
+_kb_path = Path("rag/knowledge_base/crime_glossary.txt")
+kb_chunks = [c.strip() for c in _kb_path.read_text().split("\n\n") if c.strip()]
+
+# Build TF-IDF index (lecture code)
+kb_vectorizer = TfidfVectorizer()
+kb_vectors = kb_vectorizer.fit_transform(kb_chunks)
+
+def retrieve(query: str, top_k: int = 3) -> list[str]:
+    """Return top_k most relevant chunks for query using TF-IDF cosine similarity."""
+    q_vec = kb_vectorizer.transform([query])
+    scores = cosine_similarity(q_vec, kb_vectors).flatten()
+    top_idx = np.argsort(scores)[::-1][:top_k]
+    return [kb_chunks[i] for i in top_idx if scores[i] > 0]
+
+
+# # Build TF-IDF vectors
+# kb_vectorizer = TfidfVectorizer()
+# kb_vectors = kb_vectorizer.fit_transform(kb_chunks)
+
+# def retrieve(query: str, top_k: int = 3) -> list[str]:
+#     """Return top_k most relevant KB chunks for the query."""
+#     q_vec = kb_vectorizer.transform([query])
+#     scores = cosine_similarity(q_vec, kb_vectors).flatten()
+#     top_idx = np.argsort(scores)[::-1][:top_k]
+#     return [kb_chunks[i] for i in top_idx if scores[i] > 0]
+
+
+# def chat_with_rag(query: str) -> str:
+#     chunks = retrieve(query, top_k=3)
+#     if chunks:
+#         context = "\n\n".join(chunks)
+#         query = f"Relevant domain context:\n{context}\n\nQuestion: {query}"
+#     return qc.client().chat(query, echo="none")
+
+
+
 load_dotenv(Path(__file__).parent.parent / ".env")
 
 # Connect DuckDB with Parquet using ibis
@@ -135,6 +177,7 @@ max_pop = int(df_merged["total_pop"].max())
 
 # FIX API KEY
 # os.environ["ANTHROPIC_API_KEY"] =
+
 
 
 # ── querychat (Tab 1)
@@ -1245,6 +1288,27 @@ def server(input, output, session):
 
     # --- Tab 2: querychat ---
     qc_vals = qc.server()
+
+    chat_session = qc.client()
+    
+    # RAG
+    @reactive.effect
+    @reactive.event(input.querychat_user_input)
+    async def _():
+        query = input.querychat_user_input()
+
+        # Retrieve KB chunks (lecture)
+        chunks = retrieve(query, top_k=3)
+
+        # Augment query
+        if chunks:
+            context = "\n\n".join(chunks)
+            augmented = f"Relevant context:\n{context}\n\nQuestion: {query}"
+        else:
+            augmented = query
+
+        # Send augmented query to LLM (lecture)
+        chat_session.chat(augmented, echo="none")
 
     @render.text
     def chat_title():
