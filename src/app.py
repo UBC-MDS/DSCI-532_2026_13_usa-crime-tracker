@@ -187,7 +187,8 @@ qc = querychat.QueryChat(
     greeting="""👋 Ask me anything about US crime statistics.
 
 * <span class="suggestion">Filter to Los Angeles only</span>
-* <span class="suggestion">Which city has the highest crime rate?</span>
+* <span class="suggestion">Compare violent crime per 100k between New York and Los Angeles in 2010</span>
+* <span class="suggestion">Show the top 10 cities by violent crime per 100k in the most recent year</span>
 """,
     data_description="""
 Violent Crime Statistics in the USA (for 57 cities from 32 states).
@@ -227,6 +228,7 @@ state_mapping = {
     "VT": "Vermont", "VA": "Virginia", "WA": "Washington", "WV": "West Virginia",
     "WI": "Wisconsin", "WY": "Wyoming", "DC": "District of Columbia"
 }
+When the user asks to filter (by city, state, year, or crime type) or to compare groups, always return a filtered or aggregated data frame that reflects those constraints so that the downstream Shiny outputs (map, line chart, and table) visibly change.
 """,
     # client="anthropic/claude-haiku-4-5-20251001",
     client=ChatGithub(model="gpt-4.1-mini"),
