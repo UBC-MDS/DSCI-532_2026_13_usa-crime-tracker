@@ -216,13 +216,10 @@ app_ui = ui.page_navbar(
                     ui.hr(),
                     {"class": "sidebar-fixed-header"},
                 ),
-                ui.h5("Date Range and Population"),
-                # ADDED: DATE SLIDER
-                ui.h5("Date Range"),
                 # ui.p("Date Range filter"),
                 ui.input_slider(
                     "year_range",
-                    "Select Year",
+                    "Date Range",
                     min=int(df_merged["year"].min()),
                     max=int(df_merged["year"].max()),
                     value=[
@@ -232,7 +229,6 @@ app_ui = ui.page_navbar(
                     step=1,
                     sep="",
                 ),
-                ui.hr(),
                 ui.input_slider(
                     "population_range",
                     "Population range",
@@ -240,8 +236,6 @@ app_ui = ui.page_navbar(
                     max=max_pop,
                     value=(min_pop, max_pop),
                 ),
-                ui.hr(),
-                ui.h5("Geography"),
                 ui.input_select("state_id", "State", state_id_map),
                 ui.input_selectize(
                     "cities",
@@ -256,8 +250,6 @@ app_ui = ui.page_navbar(
                         "closeAfterSelect": True,
                     },
                 ),
-                ui.hr(),
-                ui.h5("Crime Details"),
                 ui.input_select(
                     "crime_category",
                     "Crime Category:",
@@ -272,7 +264,7 @@ app_ui = ui.page_navbar(
                 # Aggregated crime filter
                 ui.input_slider(
                     "violent_range",
-                    "Violent Crime Range",
+                    "Violent Crime Rate Range (per 100k)",
                     min=int(df_raw["violent_per_100k"].min()),
                     max=int(df_raw["violent_per_100k"].max()),
                     value=(
@@ -280,7 +272,6 @@ app_ui = ui.page_navbar(
                         int(df_raw["violent_per_100k"].max()),
                     ),
                 ),
-                ui.hr(),
                 ui.input_action_button(
                     "reset_filters", "Reset Filters", class_="btn btn-outline-danger"
                 ),
@@ -336,7 +327,7 @@ app_ui = ui.page_navbar(
                     left: 10px !important;
                     transform: translateY(-50%);
                 }
-                
+
                 /* Fix sidebar position and make it scrollable */
                 .bslib-sidebar-layout > .sidebar {
                     position: fixed;
@@ -346,6 +337,13 @@ app_ui = ui.page_navbar(
                     background: white;
                     overflow-y: auto;
                     overflow-x: hidden;
+                }
+
+                /* Keep the sidebar resize handle fixed and visible while page scrolls */
+                .bslib-sidebar-layout > .sidebar-resizer {
+                    width: 6px !important;
+                    z-index: 1032 !important;
+                    cursor: col-resize;
                 }
 
                 /* Keep "Filters" header fixed at top of sidebar */
@@ -417,12 +415,45 @@ app_ui = ui.page_navbar(
                     main.style.paddingTop = (navHeight + header.offsetHeight + 4) + 'px';
                 }
 
+                function syncSidebarResizer() {
+                    const navbar = document.querySelector('.navbar');
+                    const sidebar = document.querySelector('.bslib-sidebar-layout > .sidebar');
+
+                    if (!sidebar) return;
+
+                    const resizer = document.querySelector(
+                        '.bslib-sidebar-layout > .sidebar-resizer, ' +
+                        '.bslib-sidebar-layout .sidebar-resizer, ' +
+                        '.bslib-sidebar-layout [title="Drag to resize sidebar"], ' +
+                        '.bslib-sidebar-layout [aria-label="Drag to resize sidebar"]'
+                    );
+
+                    if (!resizer) return;
+
+                    const navHeight = navbar ? navbar.offsetHeight : 56;
+                    const sidebarRect = sidebar.getBoundingClientRect();
+
+                    resizer.style.setProperty('position', 'fixed', 'important');
+                    resizer.style.setProperty('top', navHeight + 'px', 'important');
+                    resizer.style.setProperty('bottom', '0', 'important');
+                    resizer.style.setProperty('left', (sidebarRect.right - 3) + 'px', 'important');
+                    resizer.style.setProperty('width', '6px', 'important');
+                    resizer.style.setProperty('height', 'auto', 'important');
+                    resizer.style.setProperty('z-index', '1032', 'important');
+                    resizer.style.setProperty('cursor', 'col-resize', 'important');
+                }
+
                 window.addEventListener('load', syncFixedMainHeader);
+                window.addEventListener('load', syncSidebarResizer);
                 window.addEventListener('resize', syncFixedMainHeader);
+                window.addEventListener('resize', syncSidebarResizer);
+                window.addEventListener('scroll', () => setTimeout(syncSidebarResizer, 0), true);
                 document.addEventListener('click', () => setTimeout(syncFixedMainHeader, 50));
+                document.addEventListener('click', () => setTimeout(syncSidebarResizer, 50));
 
                 const observer = new MutationObserver(() => {
                     setTimeout(syncFixedMainHeader, 50);
+                    setTimeout(syncSidebarResizer, 50);
                 });
 
                 window.addEventListener('load', () => {
