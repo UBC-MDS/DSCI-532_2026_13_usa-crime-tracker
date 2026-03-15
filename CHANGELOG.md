@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-17
+
+### Added
+- Converted dataset to parquet format for improved performance and faster loading times.
+- Data connects using ibis and duckdb for efficient querying and filtering of the parquet files.
+
+### Changed
+- Filter section redesigned to be more compact and user-friendly, with filters organized into collapsible sections to save space and improve navigation.
+- Changed Violent Crime Range filter title to "Violent Crime Rate per 100k" to clarify that the filter is based on the crime rate rather than total crime count.
+
+### Known Issues
+
+
+### Reflection
+
+
+
 ## [0.3.0] - 2026-03-08
 
 ### Added
