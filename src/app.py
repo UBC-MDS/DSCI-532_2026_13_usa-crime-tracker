@@ -254,9 +254,9 @@ app_ui = ui.page_navbar(
                     "Crime Category:",
                     {
                         "violent": "All",
-                        "homs": "Homocide",
+                        "homs": "Homicide",
                         "rape": "Rape",
-                        "rob": "Robery",
+                        "rob": "Robbery",
                         "agg_ass": "Aggravated Assault",
                     },
                 ),
