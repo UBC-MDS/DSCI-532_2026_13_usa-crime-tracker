@@ -187,7 +187,7 @@ qc = querychat.QueryChat(
     greeting="""👋 Ask me anything about US crime statistics.
 
 * <span class="suggestion">Filter to Los Angeles only</span>
-* <span class="suggestion">Compare violent crime per 100k between New York and Los Angeles in 2010</span>
+* <span class="suggestion">Compare violent crime per 100k between Miami and Los Angeles in 2010</span>
 * <span class="suggestion">Show the top 10 cities by violent crime per 100k in the most recent year</span>
 """,
     data_description="""

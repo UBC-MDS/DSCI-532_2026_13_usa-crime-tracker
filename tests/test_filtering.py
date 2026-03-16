@@ -1,10 +1,7 @@
 from utils.filtering import apply_filters
 from pathlib import Path
 from shiny import App, ui, reactive, render
-import anthropic
 import os
-import querychat
-from chatlas import ChatGithub
 from dotenv import load_dotenv
 
 import pandas as pd
@@ -12,10 +9,6 @@ import altair as alt
 from shinywidgets import output_widget, render_altair
 from vega_datasets import data
 import ibis
-
-from pathlib import Path
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 # Load and Clean Raw Crime Data
