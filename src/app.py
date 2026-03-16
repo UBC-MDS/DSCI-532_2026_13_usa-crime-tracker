@@ -19,8 +19,7 @@ con = ibis.duckdb.connect()
 
 # Read the parquet file
 merged_table = con.read_parquet(
-    "data/processed/crime_merged.parquet",
-    table_name="crime_data"
+    "data/processed/crime_merged.parquet", table_name="crime_data"
 )
 
 # Execute once for UI defaults/app setup
@@ -189,19 +188,6 @@ state_mapping = {
     client=ChatGithub(model="gpt-4.1-mini"),
 )
 
-# # Commented out LLM frontend UI code
-# ui.nav_panel(
-#     "LLM Chat",
-#     ui.layout_sidebar(
-#         qc.sidebar(),
-#         ui.card(
-#             ui.card_header(ui.output_text("chat_title")),
-#             ui.output_data_frame("chat_table"),
-#             fill=True,
-#         ),
-#         fillable=True,
-#     ),
-# )
 
 app_ui = ui.page_navbar(
     # PAGE 1: Dashboard
@@ -509,6 +495,7 @@ app_ui = ui.page_navbar(
             ui.card(
                 ui.h5("Crime Map"),
                 output_widget("map_plot"),
+                style="border: none; box-shadow: none;",
             ),
             ui.hr(),
             # Modified: Aggregated Crime Line Plot + KPI table in same row
@@ -570,6 +557,7 @@ app_ui = ui.page_navbar(
             ui.card(
                 ui.h5(ui.output_text("chat_map_title")),
                 output_widget("chat_map_plot"),
+                style="border: none; box-shadow: none;",
             ),
             ui.hr(),
             # --- Visual Summaries ---
@@ -596,25 +584,6 @@ app_ui = ui.page_navbar(
             fillable=True,
         ),
         value="llm_interface",
-        # ui.layout_columns(
-        #     {"class": "ai-assistant-offset"},
-        #     ui.card(
-        #         ui.h3("AI Assistant"),
-        #         ui.input_text_area(
-        #             "ai_user_input",
-        #             "Ask the AI about the dataset:",
-        #             placeholder="e.g., summarize crime trends in Texas",
-        #             rows=4,
-        #         ),
-        #         ui.input_action_button("ai_send_btn", "Send"),
-        #         ui.hr(),
-        #         ui.h4("AI Response"),
-        #         ui.output_text_verbatim("ai_chat_output"),
-        #         ui.hr(),
-        #         ui.h4("Filtered DataFrame"),
-        #         ui.output_data_frame("ai_dataframe_output"),
-        #     ),
-        # ),
     ),
     title=ui.output_text("dashboard_title"),
     position="fixed-top",
@@ -879,15 +848,14 @@ def server(input, output, session):
     @render_altair
     def map_plot():
 
-        # need to filter df on years still!
-        # need to change to collect inputs!
-
         df = df_merged.copy()
 
         state_id_to_show = int(input.state_id())
         selected = list(input.cities())
         category = str(input.crime_category())
         config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
+        col = config["column"]
+        vmin, vmax = input.violent_range()
 
         # Year filter
         try:
@@ -900,7 +868,6 @@ def server(input, output, session):
             yr_min, yr_max = df["year"].min(), df["year"].max()
 
         # State filter
-        state_id_to_show = int(input.state_id())
         if state_id_to_show != 0:
             # state_id_map values look like "Alabama (AL)" -> grab "AL"
             st_abbr = state_id_map[state_id_to_show][-3:-1]
@@ -909,13 +876,9 @@ def server(input, output, session):
         # Violent range filter
         df["violent_crime"] = pd.to_numeric(df["violent_crime"], errors="coerce")
         df = df.dropna(subset=["violent_crime"])
-        vmin, vmax = input.violent_range()
         df = df[(df["violent_crime"] >= vmin) & (df["violent_crime"] <= vmax)]
 
         # Crime category filter
-        category = str(input.crime_category())
-        config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
-        col = config["column"]
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
             df = df.dropna(subset=[col])
@@ -1007,7 +970,7 @@ def server(input, output, session):
                 alt.layer(background, cities)
                 .configure_view(stroke=None)
                 .project("albersUsa")
-                .properties(width="container", height=500)
+                .properties(width="container", height=400)
             )
 
         # Color All Cities
@@ -1037,7 +1000,7 @@ def server(input, output, session):
             alt.layer(background, cities)
             .configure_view(stroke=None)
             .project("albersUsa")
-            .properties(width="container", height=500)
+            .properties(width="container", height=400)
         )
 
     # ADDED: KPI — MOST COMMON CRIME (USING *_sum COLUMNS)
@@ -1228,52 +1191,6 @@ def server(input, output, session):
     def kpi_change_table():
         return crime_change_table()
 
-    # @reactive.Effect
-    # @reactive.event(input.ai_send_btn)
-    # def _():
-    #     user_input = input.ai_user_input()
-
-    #     if not user_input:
-    #         output.ai_chat_output.set("Please enter a question.")
-    #         return
-
-    #     output.ai_chat_output.set("Thinking...")
-
-    #     async def call_ai():
-    #         try:
-    #             response = await asyncio.to_thread(
-    #                 client.messages.create,
-    #                 model="claude-haiku-4-5-20251001",
-    #                 max_tokens=MAX_TOKENS,
-    #                 messages=[{"role": "user", "content": user_input}],
-    #             )
-    #             return response.content[0].text
-    #         except Exception as e:
-    #             return f"Error calling Anthropic API: {e}"
-
-    #     task = reactive.Task(call_ai())
-
-    #     @task.on_done
-    #     def _(result):
-    #         output.ai_chat_output.set(result)
-
-    # # Filtered df
-    # @output
-    # @render.data_frame
-    # def ai_dataframe_output():
-    #     return filtered_df()
-
-    # # ── Tab 2: querychat
-    # qc_vals = qc.server()
-
-    # @render.text
-    # def chat_title():
-    #     return qc_vals.title() or "US Crime dataset"
-
-    # @render.data_frame
-    # def chat_table():
-    #     return qc_vals.df()
-
     # --- Tab 2: querychat ---
     qc_vals = qc.server()
 
@@ -1284,8 +1201,6 @@ def server(input, output, session):
     @render.data_frame
     def chat_table():
         return qc_vals.df()
-
-    # filtered_df_reactive = querychat_server("chat_logic", data=pd.read_csv("data.csv"))
 
     @reactive.calc
     def chat_filtered_data():
@@ -1477,7 +1392,7 @@ def server(input, output, session):
                 alt.layer(background, cities)
                 .configure_view(stroke=None)
                 .project("albersUsa")
-                .properties(width="container", height=500)
+                .properties(width="container", height=400)
             )
 
         # Color All Cities
@@ -1508,7 +1423,7 @@ def server(input, output, session):
             alt.layer(background, cities)
             .configure_view(stroke=None)
             .project("albersUsa")
-            .properties(width="container", height=500)
+            .properties(width="container", height=400)
         )
 
 
