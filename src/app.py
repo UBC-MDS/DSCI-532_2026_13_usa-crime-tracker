@@ -1111,53 +1111,79 @@ def server(input, output, session):
         return most_common_crime()
 
     # ADDED: KPI — CHANGE IN CRIME RATE (violent_per_100k)
-    @reactive.Calc
+    @reactive.Calc          #used the help of AI for this calcaulation, I was pretty confused on. how to implement the city comparision
     def crime_change_table():
         d = filtered_df().copy()
+
         if d.empty:
             return pd.DataFrame({"message": ["No data available"]})
 
-        # Compute average violent crime rate per year
         category = input.crime_category()
+        yr_min, yr_max = input.year_range()
 
         if category == "violent":
             rate_col = "violent_per_100k"
             title = "Violent Crime"
-
         elif category == "homs":
             rate_col = "homs_per_100k"
             title = "Homicide"
-
         elif category == "rape":
             rate_col = "rape_per_100k"
             title = "Rape"
-
         elif category == "rob":
             rate_col = "rob_per_100k"
             title = "Robbery"
-
         elif category == "agg_ass":
             rate_col = "agg_ass_per_100k"
             title = "Aggravated Assault"
 
-        yearly = (
-            d.groupby("year").agg({rate_col: "mean"}).reset_index().sort_values("year")
+        d[rate_col] = pd.to_numeric(d[rate_col], errors="coerce")
+        d["year"] = pd.to_numeric(d["year"], errors="coerce")
+        d = d.dropna(subset=[rate_col, "year", "city"])
+
+        if d.empty:
+            return pd.DataFrame({"message": ["No data available"]})
+
+        latest_df = (
+            d[d["year"] == yr_max]
+            .groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        yearly["Change in crime rate (%)"] = round(
-            yearly[rate_col].pct_change(periods=1) * 100, 2
-        )
-        yearly[rate_col] = yearly[rate_col].round(3)
-
-        yearly = yearly.rename(
-            columns={
-                "year": "Year",
-                rate_col: f"{title} Rate (per 100k)",
-                "Change in crime rate (%)": f"Change in {title} Rate (%)",
-            }
+        prev_df = (
+            d[(d["year"] >= yr_min) & (d["year"] < yr_max)]
+            .groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        return yearly
+        latest_col = f"{yr_max}"
+        prev_col = f"Avg {yr_min}–{yr_max-1}"
+
+        latest_df = latest_df.rename(columns={rate_col: latest_col})
+        prev_df = prev_df.rename(columns={rate_col: prev_col})
+
+        comparison_df = latest_df.merge(prev_df, on="city", how="left")
+
+        comparison_df["% Change"] = round(
+            ((comparison_df[latest_col] - comparison_df[prev_col]) / comparison_df[prev_col]) * 100,
+            2,
+        )
+
+        comparison_df[latest_col] = comparison_df[latest_col].round(3)
+        comparison_df[prev_col] = comparison_df[prev_col].round(3)
+
+        comparison_df = comparison_df.rename(columns={"city": "City"})
+        comparison_df = comparison_df.sort_values(by=latest_col, ascending=False)
+
+        selected = list(input.cities())
+
+        if selected and "All" in selected:
+            comparison_df = comparison_df.head(10)
+
+        comparison_df = comparison_df.reset_index(drop=True)
+
+        return comparison_df
+
 
     @output
     @render.text
@@ -1176,14 +1202,20 @@ def server(input, output, session):
         elif category == "agg_ass":
             title = "Aggravated Assault"
 
-        return f"Change in {title} Rate ({yr_min}-{yr_max})"
+        return f"{title} Rate by City: {yr_max} vs Avg from {yr_min}–{yr_max-1}"
 
     @render.text
     def aggregation_note():
         selected = list(input.cities())
 
+        if selected and "All" in selected:
+            return "Note: Showing top 10 cities by latest crime rate."
+
         if selected and "All" not in selected and len(selected) > 1:
-            return "Note: Table values are aggregated across selected cities."
+            return "Note: Showing selected cities."
+
+        if selected and "All" not in selected and len(selected) == 1:
+            return "Note: Showing selected city."
 
         return ""
 
