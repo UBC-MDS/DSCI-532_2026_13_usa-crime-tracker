@@ -490,14 +490,27 @@ app_ui = ui.page_navbar(
                         ),
                     ),
                     ui.value_box(
-                        "Population",
+                        "Lowest Avg Crime City (All Cities)",
                         ui.div(
-                            ui.output_text("pop_kpi"),
+                            ui.output_text("kpi_min_city"),
                             ui.div(
-                                {"style": "font-size:12px; color:gray;"},
-                                ui.output_ui("pop_change"),
+                                {"style": "font-size:12px;"},
+                                ui.output_text("kpi_min_note"),
                             ),
                         ),
+                        theme="bg-success text-white",
+                    ),
+
+                    ui.value_box(
+                        "Highest Avg Crime (All Cities)",
+                        ui.div(
+                            ui.output_text("kpi_max_city"),
+                            ui.div(
+                                {"style": "font-size:12px;"},
+                                ui.output_text("kpi_max_note"),
+                            ),
+                        ),
+                        theme="bg-danger text-white",
                     ),
                     # ADDED: KPI — MOST COMMON CRIME
                     ui.card(
@@ -762,49 +775,47 @@ def server(input, output, session):
 
         return rate
 
-    @render.text
-    def pop_kpi():
-        df = filtered_df().copy()
-        latest_year = df["year"].max()
-        df_latest = df[df["year"] == latest_year]
-        duplicates_cities = df_latest.drop_duplicates(subset=["city", "state_id"])
-        pop = int(duplicates_cities["total_pop"].sum())
-
-        return f"{pop:,}"
-
-    @render.text
-    def pop_change():
-
-        df = filtered_df().copy()
-        if df.empty:
-            return ""
+    @reactive.calc
+    def city_crime_extremes():
+        df = df_merged.copy()
 
         yr_min, yr_max = input.year_range()
+        df["year"] = pd.to_numeric(df["year"], errors="coerce")
+        df = df.dropna(subset=["year"])
+        df = df[(df["year"] >= yr_min) & (df["year"] <= yr_max)]
 
-        # latest year
-        df_latest = df[df["year"] == yr_max]
+        pmin, pmax = input.population_range()
+        df["total_pop"] = pd.to_numeric(df["total_pop"], errors="coerce")
+        df = df.dropna(subset=["total_pop"])
+        df = df[(df["total_pop"] >= pmin) & (df["total_pop"] <= pmax)]
 
-        # previous years
-        df_prev = df[(df["year"] >= yr_min) & (df["year"] < yr_max)]
+        category = str(input.crime_category())
+        config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
+        rate_col = config["per_100k_column"]
 
-        latest_pop = df_latest.drop_duplicates(["city", "state_id"])["total_pop"].sum()
+        df[rate_col] = pd.to_numeric(df[rate_col], errors="coerce")
+        df = df.dropna(subset=[rate_col, "city"])
 
-        prev_yearly_pop = df_prev.groupby("year").apply(
-            lambda x: x.drop_duplicates(["city", "state_id"])["total_pop"].sum()
+        if df.empty:
+            return None
+
+        city_rates = (
+            df.groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        prev_avg_pop = prev_yearly_pop.mean()
+        if city_rates.empty:
+            return None
 
-        pct_change = ((latest_pop - prev_avg_pop) / prev_avg_pop) * 100
-        pct_change = round(pct_change, 2)
+        max_row = city_rates.loc[city_rates[rate_col].idxmax()]
+        min_row = city_rates.loc[city_rates[rate_col].idxmin()]
 
-        color = "green" if pct_change > 0 else "red"
-        sign = "+" if pct_change > 0 else ""
-
-        return ui.span(
-            f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg",
-            style=f"font-size:12px; color:{color};",
-        )
+        return {
+            "max_city": max_row["city"],
+            "max_rate": round(max_row[rate_col], 1),
+            "min_city": min_row["city"],
+            "min_rate": round(min_row[rate_col], 1),
+        }
 
     @render.text
     def debug_line_plot():
@@ -814,6 +825,44 @@ def server(input, output, session):
             f"cities: {list(input.cities())}\n"
             f"violent_range: {input.violent_range()}\n"
         )
+    @render.text
+    def kpi_max_city():
+        result = city_crime_extremes()
+        if result is None:
+            return "No data"
+        return result["max_city"]
+    
+    @render.text
+    def kpi_min_city():
+        result = city_crime_extremes()
+        if result is None:
+            return "No data"
+        return result["min_city"]
+    
+
+    @render.text
+    def kpi_max_note():
+        result = city_crime_extremes()
+        if result is None:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+        category = str(input.crime_category())
+        title = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])["title"]
+
+        return f"{result['max_rate']} per 100k • {title} • Avg {yr_min}–{yr_max}"
+    
+    @render.text
+    def kpi_min_note():
+        result = city_crime_extremes()
+        if result is None:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+        category = str(input.crime_category())
+        title = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])["title"]
+
+        return f"{result['min_rate']} per 100k • {title} • Avg {yr_min}–{yr_max}"
 
     @render_altair
     def line_plot():
