@@ -19,8 +19,7 @@ con = ibis.duckdb.connect()
 
 # Read the parquet file
 merged_table = con.read_parquet(
-    "data/processed/crime_merged.parquet",
-    table_name="crime_data"
+    "data/processed/crime_merged.parquet", table_name="crime_data"
 )
 
 # Execute once for UI defaults/app setup
@@ -254,9 +253,9 @@ app_ui = ui.page_navbar(
                     "Crime Category:",
                     {
                         "violent": "All",
-                        "homs": "Homocide",
+                        "homs": "Homicide",
                         "rape": "Rape",
-                        "rob": "Robery",
+                        "rob": "Robbery",
                         "agg_ass": "Aggravated Assault",
                     },
                 ),
