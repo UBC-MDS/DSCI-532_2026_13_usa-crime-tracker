@@ -90,6 +90,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reorganized layout so map and line chart serve as the primary analytical views.
 - Changed placement of Change in Crime Rate table to align with line chart analysis view.
 - Updated component structure to better align with implemented job stories and filtering workflow.
+- Updated CONTRIBUTING.md with M3 collaboration retrospective, and M4 commitments.
 
 ### Known Issues
 
