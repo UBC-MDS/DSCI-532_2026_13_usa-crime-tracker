@@ -77,6 +77,57 @@ In the terminal, enter:
 Ctrl + C
 ```
 
+## 5. Running Playwright Tests
+
+Install dependencies:
+
+    pip install -r requirements.txt
+
+Run all tests (Playwright):
+
+    python -m pytest tests/test_playwright.py -v --browser firefox
+
+This command works in a clean environment.
+
+test_year_slider_changes_kpi(page: Page, app: ShinyAppProc):
+Verify that adjusting the year-range slider updates the total crimes KPI.
+
+test_total_crimes_correct(page: Page, app: ShinyAppProc):
+Ensure the app's displayed total crimes value matches the computed latest-year total from the dataset.
+
+test_state_filter_total_crimes_correct(page: Page, app: ShinyAppProc):
+Confirm that selecting a state actually filters the data.
+
+## 6. Running Unit Tests
+
+Install dependencies:
+
+    pip install -r requirements.txt
+
+Run all tests (pytest + Playwright):
+
+    pytest
+
+This command works in a clean environment.
+
+test_filter_by_city():
+Filtering by city should return all rows for that city in the dataset.
+
+test_filter_by_year():
+Filtering by year should return all rows for that year in the dataset.
+
+test_empty_filter_returns_all():
+No filters applied should return the same rows the app would show with default settings.
+
+test_nonexistent_city_returns_empty():
+Filtering for a city not in the dataset should return zero rows.
+
+test_aggregation_correctness():
+Ensures violent_crime equals the sum of its components, preventing incorrect totals in the dataset.
+
+test_year_boundary_condition():
+Checks that filtering at the dataset's min/max year returns the correct rows, matching slider boundaries.
+
 # Contributors
  If you are looking to contribute ot the project please refer to the guidelines in this document: 
  [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

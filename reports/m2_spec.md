@@ -78,6 +78,25 @@ For the `crime_range_table` reactive calculation, we will analyze the `filtered_
 
 For the `chat_filtered_data` reactive calculation we will analyze the querychat responses to input prompts, to take the filtered data frame, and turn it into a format useful for outputs. This will allow outputs to be filtered using the querychat interface to help users efficiently search and understand trends within the data. Updated the crime table to to calculate the yearly crime rate for the selected crime category over the selected year range. We then compute the year-over-year percentage change in crime rate and display it in a table. This helps users understand how the selected crime category changes over time.
 
+# RAG Implementation
+Without RAG:
+If the retrieval step is removed, the chatbot will just take the user’s raw input and send it straight to the LLM:
+chat_session.chat(query)
+
+And the model answers purely from its built‑in knowledge. It has no access to the crime_glossary.txt file, so it won’t understand the details of our dataset.
+
+With RAG:
+Adds a retrieval layer before sending anything to the LLM:
+
+TF‑IDF searches the knowledge base chunks = retrieve(query, top_k=3) This pulls the most relevant glossary entries from crime_glossary.txt.
+
+Add those chunks to the user’s question augmented = f"Relevant context:\n{context}\n\nQuestion: {query}"
+
+Send the augmented message to the LLM chat_session.chat(augmented)
+
+So the model gets relevant information from the glossary text file instead of guessing.
+
+
 # Future Implementation
 In a future version of the dashboard, we plan to add a comparison feature that identifies the cities with the highest and lowest crime rates based on the currently selected crime category and filters. This would allow users to quickly compare the best- and worst-performing cities for violent crime, homicide, robbery, rape, or aggravated assault. The feature would use the filtered dataset and calculate the crime rate per 100,000 people for each city in the most recent year of the selected range, then display the cities with the maximum and minimum values. This would provide users with a clearer comparison across locations and make the KPI section more informative.
 

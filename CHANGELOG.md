@@ -13,7 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data connects using ibis and duckdb for efficient querying and filtering of the parquet files.
 - Updated CONTRIBUTING.md with M3 collaboration retrospective, and M4 commitments.
 - Added a KPI output that shows the highest and lowest crime rate that is filtered on year, crime category and population (#135). This replaces the population KPI that was there in the previous week's milestone. 
-
+- 3 Playwright tests for the dashboard
+- 3 unit tests for the filter
+- Added README instructions and specifications for running the tests
+- RAG: Custom Knowledge Base for Querychat
+- 
 ### Changed
 
 - Filter section redesigned to be more compact and user-friendly, with filters organized into collapsible sections to save space and improve navigation.
@@ -22,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Corrected spelling mistakes in the crime category filter
 - Changed the crime rate comparison table to make city-to-city comparisons clearer (#157)
 - Changed the crime rate per 100k KPI title to reflect current crime selection (#155)
-
+- Addressed feedback by changing AI suggestions to better match user experience and so that it does something to the output.
 
 
 ### Known Issues
@@ -31,7 +35,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Release Highlight: RAG System
 
-<!-- One short paragraph describing what you built and what it does for the user. -->
+Without RAG:
+If the retrieval step is removed, the chatbot will just take the user’s raw input and send it straight to the LLM:
+chat_session.chat(query)
+
+And the model answers purely from its built‑in knowledge. It has no access to the crime_glossary.txt file, so it won’t understand the details of our dataset.
+
+With RAG:
+Adds a retrieval layer before sending anything to the LLM:
+
+TF‑IDF searches the knowledge base chunks = retrieve(query, top_k=3) This pulls the most relevant glossary entries from crime_glossary.txt.
+
+Add those chunks to the user’s question augmented = f"Relevant context:\n{context}\n\nQuestion: {query}"
+
+Send the augmented message to the LLM chat_session.chat(augmented)
+
+So the model gets relevant information from the glossary text file instead of guessing.
 
 - **Option chosen:** C - RAG system
 - **PR:** Issue #144.
