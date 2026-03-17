@@ -17,9 +17,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Known Issues
 
+### Release Highlight: [Name of your advanced feature]
+
+<!-- One short paragraph describing what you built and what it does for the user. -->
+
+- **Option chosen:** C - RAG system
+- **PR:** Issue #144.
+- **Why this option over the others:** 
+
+Our initial thought was a click selection would benefit the user the most. However, we were unable to implement this due to our map implementation in altair. We decided a better alternative would be a RAG system. As our users are immigrants who know little about the US, and may not understand the different components of the dashboard, we considered that providing a resource with more information on the US would be the most beneficial resource.
+
+- **Feature prioritization issue link:** #124
+
+### Collaboration
+
+<!-- Summary of workflow or collaboration improvements made since M3. -->
+
+- **CONTRIBUTING.md:** <https://github.com/UBC-MDS/DSCI-532_2026_13_usa-crime-tracker/pull/162>
+
+- **M3 retrospective:** 
+
+After M3 collaboration feedback we implemented a more stingent PR review policy where each PR had to receive at least one review before merging.
+The team did well with this and overall made a strong effort to ensure this commitment was met. Moving forward into M4 we made commitments to continue
+this and further commited to better task assignment, clearer task assignment/descriptions, more descriptive PR comments, and last minute work rushes. 
+
+- **M4:** 
+
+We decided to create a reviewer role for M4. This person's job is to handle all project management aspects of the milestones - creation and distribution of tasks as issues, PR reviewing, and complete any written components. We tried splitting and assigning all tasks as issues at the beginning of the milestone to create a cleaner working environemnt.
+The idea was to clearly distribute work, so everyone understood their tasks and roles for the milestone. Lastly, we implemented deadlines to avoid last minutes rushes.
+
 
 ### Reflection
 
+<!-- Standard (see General Guidelines): what the dashboard does well, current limitations,
+     any intentional deviations from DSCI 531 visualization best practices. -->
+
+<!-- Trade-offs: one sentence on feedback prioritization - full rationale is in #<issue> and ### Changed above. -->
+
+<!-- Most useful: which lecture, material, or feedback shaped your work most this milestone,
+     and anything you wish had been covered. -->
 
 
 ## [0.3.0] - 2026-03-08
