@@ -52,6 +52,12 @@ The idea was to clearly distribute work, so everyone understood their tasks and 
 <!-- Standard (see General Guidelines): what the dashboard does well, current limitations,
      any intentional deviations from DSCI 531 visualization best practices. -->
 
+### Reflection
+1–2 paragraphs (max 300 words) addressing:
+- What the dashboard does well at this stage.
+- Current limitations and planned improvements.
+- Any intentional deviations from DSCI 531 visualization best practices.
+
 <!-- Trade-offs: one sentence on feedback prioritization - full rationale is in #<issue> and ### Changed above. -->
 
 <!-- Most useful: which lecture, material, or feedback shaped your work most this milestone,
