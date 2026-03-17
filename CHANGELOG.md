@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Filter section redesigned to be more compact and user-friendly, with filters organized into collapsible sections to save space and improve navigation.
 - Changed Violent Crime Range filter title to "Violent Crime Rate per 100k" to clarify that the filter is based on the crime rate rather than total crime count.
+- Changed the crime rate comparison table to make city-to-city comparisons clearer (#157)
+
 
 ### Known Issues
 
