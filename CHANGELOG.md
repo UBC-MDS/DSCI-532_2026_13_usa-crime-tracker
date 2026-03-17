@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-17
+
+### Added
+- 3 Playwright tests for the dashboard
+- 3 unit tests for the filter
+- Added README instructions and specifications for running the tests
+- RAG: Custom Knowledge Base for Querychat
+
+### Fixed:
+- Addressed feedback by changing AI suggestions to better match user experience and so that it does something to the output.
+
 ## [0.3.0] - 2026-03-08
 
 ### Added

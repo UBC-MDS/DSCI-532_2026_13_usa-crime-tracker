@@ -11,6 +11,7 @@ import os
 from dotenv import load_dotenv
 import pandas as pd
 import numpy as np
+import time
 
 app = create_app_fixture("../src/app.py")
 
@@ -93,38 +94,76 @@ state_id_map = {
 # Convert Mapping id's to a data frame
 mapping_df = pd.DataFrame(list(state_id_map.items()), columns=["id", "state_name"])
 
-def test_initial_dataset(page: Page, app: ShinyAppProc):
-    '''Verifies that the dashboard loads with the complete dataset displayed in the output table.'''
+def wait_for_change(output, old_value, timeout=8):
+    start = time.time()
+    while time.time() - start < timeout:
+        val = output.get_value()
+        if val != old_value:
+            return True
+        time.sleep(0.1)
+    return False
+
+
+def wait_for_nonempty(output, timeout=8):
+    start = time.time()
+    while time.time() - start < timeout:
+        val = output.get_value()
+        if val and str(val).strip() != "":
+            return val
+        time.sleep(0.1)
+    return output.get_value()
+
+
+def test_year_slider_changes_kpi(page: Page, app: ShinyAppProc):
+    """Verify that adjusting the year-range slider updates the total crimes KPI."""
     page.goto(app.url)
 
-    df = controller.OutputDataFrame(page, "filtered_table")
+    total = controller.OutputText(page, "total_crimes")
+    before = wait_for_nonempty(total)
 
-    # Check basic structure
-    df.expect_ncol(df_merged.shape[1])
-    df.expect_nrow(df_merged.shape[0])
+    slider = controller.InputSliderRange(page, "year_range")
 
-def test_year_range_filter(page: Page, app: ShinyAppProc):
-    '''Checks that adjusting the year‑range slider correctly restricts the table to rows within the selected year interval.'''
+    # Set to a narrower range — this ALWAYS works
+    slider.set(("2000", "2010"))
+
+    assert wait_for_change(total, before)
+
+def test_total_crimes_correct(page: Page, app: ShinyAppProc):
+    """Ensure the app's displayed total crimes value matches the computed latest-year total from the dataset."""
     page.goto(app.url)
 
-    year_slider = controller.InputSliderRange(page, "year_range")
-    year_slider.set(("2010", "2015"))
+    total = controller.OutputText(page, "total_crimes")
+    app_value = int(wait_for_nonempty(total).replace(",", ""))
 
-    df = controller.OutputDataFrame(page, "filtered_table")
+    df = df_merged.copy()
+    latest_year = df["year"].max()
+    df_latest = df[df["year"] == latest_year]
 
-    years = df.get_column("year")
-    assert all(2010 <= int(y) <= 2015 for y in years)
+    expected = int(df_latest["violent_crime"].sum())
 
-def test_state_filter(page: Page, app: ShinyAppProc):
-    '''Ensures that selecting a specific state ID filters the table so that only rows from the corresponding state appear.'''
+    assert app_value == expected
+
+
+def test_state_filter_total_crimes_correct(page: Page, app: ShinyAppProc):
+    """Confirm that selecting a state filters the data correctly and the app's total crimes value matches the expected result."""
     page.goto(app.url)
 
-    state_select = controller.InputSelect(page, "state_id")
+    state = controller.InputSelect(page, "state_id")
+    # Alabama
+    state.set("1")  
 
-    state_select.set("1")
+    total = controller.OutputText(page, "total_crimes")
+    app_value = int(wait_for_nonempty(total).replace(",", ""))
 
-    df = controller.OutputDataFrame(page, "filtered_table")
-    states = df.get_column("state_id")
+    df = df_merged.copy()
 
-    # Expect all rows to match the abbreviation extracted in server code
-    assert all(s == "AL" for s in states)
+    st_abbr = state_id_map[1][-3:-1]
+    df = df[df["state_id"] == st_abbr]
+
+    latest_year = df["year"].max()
+    df_latest = df[df["year"] == latest_year]
+
+    expected = int(df_latest["violent_crime"].sum())
+
+    assert app_value == expected
+

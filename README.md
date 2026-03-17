@@ -76,7 +76,28 @@ In the terminal, enter:
 ```bash
 Ctrl + C
 ```
-## 5. Running Tests
+## 5. Running Playwright Tests
+
+Install dependencies:
+
+    pip install -r requirements.txt
+
+Run all tests (Playwright):
+
+    python -m pytest tests/test_playwright.py -v --browser firefox
+
+This command works in a clean environment.
+
+test_year_slider_changes_kpi(page: Page, app: ShinyAppProc):
+Verify that adjusting the year-range slider updates the total crimes KPI.
+
+test_total_crimes_correct(page: Page, app: ShinyAppProc):
+Ensure the app's displayed total crimes value matches the computed latest-year total from the dataset.
+
+test_state_filter_total_crimes_correct(page: Page, app: ShinyAppProc):
+Confirm that selecting a state filters the data correctly and the app's total crimes value matches the expected result.
+
+## 6. Running Unit Tests
 
 Install dependencies:
 
