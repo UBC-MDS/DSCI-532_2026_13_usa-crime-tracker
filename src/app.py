@@ -140,7 +140,9 @@ max_pop = int(df_merged["total_pop"].max())
 qc = querychat.QueryChat(
     df_merged.copy(),
     "Statistics",
-    greeting="""👋 Ask me anything about US crime statistics.
+    greeting="""👋 Welcome to the USA Crime Statistics Dashboard, I am your AI data assistant.
+    Try asking about specific years, cities, or making comparisons bewteen multiple cities.
+    You can use the drop down menu above to select a diffrent crime category.
 
 * <span class="suggestion">Filter to Los Angeles only</span>
 * <span class="suggestion">Which city has the highest crime rate?</span>
