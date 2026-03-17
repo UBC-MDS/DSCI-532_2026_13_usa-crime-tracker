@@ -251,7 +251,7 @@ app_ui = ui.page_navbar(
                 # Aggregated crime filter
                 ui.input_slider(
                     "violent_range",
-                    "Violent Crime Range",
+                    "Violent Crime Rate Range (per 100k)",
                     min=int(df_merged["violent_per_100k"].min()),
                     max=int(df_merged["violent_per_100k"].max()),
                     value=(
