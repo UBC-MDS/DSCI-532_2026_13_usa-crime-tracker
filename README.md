@@ -44,23 +44,23 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 When deploying the application (e.g., on Posit Connect Cloud), this variable must be added to the deployment's **Environment Variables** so the AI assistant can communicate with the Anthropic API.
 
-# Running the App Locally 
+# Running the App Locally
 
-## 1. Close the Repository 
+## 1. Clone the Repository
 
 ```bash
 git clone https://github.com/UBC-MDS/DSCI-532_2026_13_usa-crime-tracker.git
 cd DSCI-532_2026_13_usa-crime-tracker
 ```
 
-## 2. Create the Conda Environment 
+## 2. Create the Conda Environment
 
 ```bash
 conda env create -f environment.yml
 conda activate usa-crime-tracker
 ```
 
-## 3. Run the Shiny App 
+## 3. Run the Shiny App
 
 ```bash
 shiny run src/app.py
@@ -77,6 +77,22 @@ In the terminal, enter:
 Ctrl + C
 ```
 
+## 5. Running Tests
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Run all tests (pytest + Playwright):
+
+```bash
+pytest
+```
+
+
 # Contributors
+
  If you are looking to contribute ot the project please refer to the guidelines in this document: 
  [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.

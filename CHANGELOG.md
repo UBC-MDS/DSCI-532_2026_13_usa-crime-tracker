@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Data connects using ibis and duckdb for efficient querying and filtering of the parquet files.
 - Updated CONTRIBUTING.md with M3 collaboration retrospective, and M4 commitments.
 - Added a KPI output that shows the highest and lowest crime rate that is filtered on year, crime category and population (#135). This replaces the population KPI that was there in the previous week's milestone. 
+- 3 Playwright tests for the dashboard
+- 3 unit tests for the filter
+- Added README instructions and specifications for running the tests
+- RAG: Custom Knowledge Base for Querychat
 
 ### Changed
 
@@ -22,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Corrected spelling mistakes in the crime category filter
 - Changed the crime rate comparison table to make city-to-city comparisons clearer (#157)
 - Changed the crime rate per 100k KPI title to reflect current crime selection (#155)
-
+- Addressed feedback by changing AI suggestions to better match user experience and so that it does something to the output.
 
 
 ### Known Issues
@@ -31,7 +35,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Release Highlight: RAG System
 
-<!-- One short paragraph describing what you built and what it does for the user. -->
+Without RAG:
+If the retrieval step is removed, the chatbot will just take the user’s raw input and send it straight to the LLM:
+chat_session.chat(query)
+
+And the model answers purely from its built‑in knowledge. It has no access to the crime_glossary.txt file, so it won’t understand the details of our dataset.
+
+With RAG:
+Adds a retrieval layer before sending anything to the LLM:
+
+TF‑IDF searches the knowledge base chunks = retrieve(query, top_k=3) This pulls the most relevant glossary entries from crime_glossary.txt.
+
+Add those chunks to the user’s question augmented = f"Relevant context:\n{context}\n\nQuestion: {query}"
+
+Send the augmented message to the LLM chat_session.chat(augmented)
+
+So the model gets relevant information from the glossary text file instead of guessing.
 
 - **Option chosen:** C - RAG system
 - **PR:** Issue #144.
@@ -68,6 +87,7 @@ The limited number of data points for US cities is a drawback in our dashboard, 
 
 
 <!-- Trade-offs: one sentence on feedback prioritization - full rationale is in #<issue> and ### Changed above. -->
+
 ##### Trade-offs:
 
 For our feedback prioritization, we focused on issues that reflected broken functionality, inconsistencies in our dashboard, or information presented in a confusing manner, and decided minor styling/details were non-critical given the short timeframe for this milestone. The full rationale is in #133 and ###Changed above.
@@ -86,6 +106,36 @@ The most useful feedback was the collaboration feeback from milestone 3. Our tea
 1. Verifies that the dashboard loads with the complete dataset displayed in the output table. This is critical as the dataset is the basis of the entire dashboard. If not loaded properly, the dashboard would be unable to convey information, or display inconsistent, misleading results.
 2. Checks that adjusting the year‑range slider correctly restricts the table to rows within the selected year interval. The year range is one of the more important features, allowing users to filter for, and view crime rates trends over time. If broken, it will be hard to discern current information from old, out-of-date statsitics.
 3. Ensures that selecting a specific state ID filters the table so that only rows from the corresponding state appear. If not working properly, the table view will not acccurately reflect the state of the map, or the line chart. This could be confusing as cities might show up in the table which are not in the rest of the display.
+
+
+###### Unit Test Coverage
+
+test_year_slider_changes_kpi(page: Page, app: ShinyAppProc):
+Verify that adjusting the year-range slider updates the total crimes KPI.
+
+test_total_crimes_correct(page: Page, app: ShinyAppProc):
+Ensure the app's displayed total crimes value matches the computed latest-year total from the dataset.
+
+test_state_filter_total_crimes_correct(page: Page, app: ShinyAppProc):
+Confirm that selecting a state actually filters the data.
+
+test_filter_by_city():
+Filtering by city should return all rows for that city in the dataset.
+
+test_filter_by_year():
+Filtering by year should return all rows for that year in the dataset.
+
+test_empty_filter_returns_all():
+No filters applied should return the same rows the app would show with default settings.
+
+test_nonexistent_city_returns_empty():
+Filtering for a city not in the dataset should return zero rows.
+
+test_aggregation_correctness():
+Ensures violent_crime equals the sum of its components, preventing incorrect totals in the dataset.
+
+test_year_boundary_condition():
+Checks that filtering at the dataset's min/max year returns the correct rows, matching slider boundaries.
 
 ## [0.3.0] - 2026-03-08
 
