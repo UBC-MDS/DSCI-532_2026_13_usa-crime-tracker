@@ -240,9 +240,9 @@ app_ui = ui.page_navbar(
                     "Crime Category:",
                     {
                         "violent": "All",
-                        "homs": "Homocide",
+                        "homs": "Homicide",
                         "rape": "Rape",
-                        "rob": "Robery",
+                        "rob": "Robbery",
                         "agg_ass": "Aggravated Assault",
                     },
                 ),
@@ -476,14 +476,27 @@ app_ui = ui.page_navbar(
                         ),
                     ),
                     ui.value_box(
-                        "Population",
+                        "Lowest Avg Crime City (All Cities)",
                         ui.div(
-                            ui.output_text("pop_kpi"),
+                            ui.output_text("kpi_min_city"),
                             ui.div(
-                                {"style": "font-size:12px; color:gray;"},
-                                ui.output_ui("pop_change"),
+                                {"style": "font-size:12px;"},
+                                ui.output_text("kpi_min_note"),
                             ),
                         ),
+                        theme="bg-success text-white",
+                    ),
+
+                    ui.value_box(
+                        "Highest Avg Crime (All Cities)",
+                        ui.div(
+                            ui.output_text("kpi_max_city"),
+                            ui.div(
+                                {"style": "font-size:12px;"},
+                                ui.output_text("kpi_max_note"),
+                            ),
+                        ),
+                        theme="bg-danger text-white",
                     ),
                     # ADDED: KPI — MOST COMMON CRIME
                     ui.card(
@@ -731,49 +744,47 @@ def server(input, output, session):
 
         return rate
 
-    @render.text
-    def pop_kpi():
-        df = filtered_df().copy()
-        latest_year = df["year"].max()
-        df_latest = df[df["year"] == latest_year]
-        duplicates_cities = df_latest.drop_duplicates(subset=["city", "state_id"])
-        pop = int(duplicates_cities["total_pop"].sum())
-
-        return f"{pop:,}"
-
-    @render.text
-    def pop_change():
-
-        df = filtered_df().copy()
-        if df.empty:
-            return ""
+    @reactive.calc
+    def city_crime_extremes():
+        df = df_merged.copy()
 
         yr_min, yr_max = input.year_range()
+        df["year"] = pd.to_numeric(df["year"], errors="coerce")
+        df = df.dropna(subset=["year"])
+        df = df[(df["year"] >= yr_min) & (df["year"] <= yr_max)]
 
-        # latest year
-        df_latest = df[df["year"] == yr_max]
+        pmin, pmax = input.population_range()
+        df["total_pop"] = pd.to_numeric(df["total_pop"], errors="coerce")
+        df = df.dropna(subset=["total_pop"])
+        df = df[(df["total_pop"] >= pmin) & (df["total_pop"] <= pmax)]
 
-        # previous years
-        df_prev = df[(df["year"] >= yr_min) & (df["year"] < yr_max)]
+        category = str(input.crime_category())
+        config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
+        rate_col = config["per_100k_column"]
 
-        latest_pop = df_latest.drop_duplicates(["city", "state_id"])["total_pop"].sum()
+        df[rate_col] = pd.to_numeric(df[rate_col], errors="coerce")
+        df = df.dropna(subset=[rate_col, "city"])
 
-        prev_yearly_pop = df_prev.groupby("year").apply(
-            lambda x: x.drop_duplicates(["city", "state_id"])["total_pop"].sum()
+        if df.empty:
+            return None
+
+        city_rates = (
+            df.groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        prev_avg_pop = prev_yearly_pop.mean()
+        if city_rates.empty:
+            return None
 
-        pct_change = ((latest_pop - prev_avg_pop) / prev_avg_pop) * 100
-        pct_change = round(pct_change, 2)
+        max_row = city_rates.loc[city_rates[rate_col].idxmax()]
+        min_row = city_rates.loc[city_rates[rate_col].idxmin()]
 
-        color = "green" if pct_change > 0 else "red"
-        sign = "+" if pct_change > 0 else ""
-
-        return ui.span(
-            f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg",
-            style=f"font-size:12px; color:{color};",
-        )
+        return {
+            "max_city": max_row["city"],
+            "max_rate": round(max_row[rate_col], 1),
+            "min_city": min_row["city"],
+            "min_rate": round(min_row[rate_col], 1),
+        }
 
     @render.text
     def debug_line_plot():
@@ -783,6 +794,44 @@ def server(input, output, session):
             f"cities: {list(input.cities())}\n"
             f"violent_range: {input.violent_range()}\n"
         )
+    @render.text
+    def kpi_max_city():
+        result = city_crime_extremes()
+        if result is None:
+            return "No data"
+        return result["max_city"]
+    
+    @render.text
+    def kpi_min_city():
+        result = city_crime_extremes()
+        if result is None:
+            return "No data"
+        return result["min_city"]
+    
+
+    @render.text
+    def kpi_max_note():
+        result = city_crime_extremes()
+        if result is None:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+        category = str(input.crime_category())
+        title = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])["title"]
+
+        return f"{result['max_rate']} per 100k • {title} • Avg {yr_min}–{yr_max}"
+    
+    @render.text
+    def kpi_min_note():
+        result = city_crime_extremes()
+        if result is None:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+        category = str(input.crime_category())
+        title = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])["title"]
+
+        return f"{result['min_rate']} per 100k • {title} • Avg {yr_min}–{yr_max}"
 
     @render_altair
     def line_plot():
@@ -1025,53 +1074,79 @@ def server(input, output, session):
         return most_common_crime()
 
     # ADDED: KPI — CHANGE IN CRIME RATE (violent_per_100k)
-    @reactive.Calc
+    @reactive.Calc          #used the help of AI for this calcaulation, I was pretty confused on. how to implement the city comparision
     def crime_change_table():
         d = filtered_df().copy()
+
         if d.empty:
             return pd.DataFrame({"message": ["No data available"]})
 
-        # Compute average violent crime rate per year
         category = input.crime_category()
+        yr_min, yr_max = input.year_range()
 
         if category == "violent":
             rate_col = "violent_per_100k"
             title = "Violent Crime"
-
         elif category == "homs":
             rate_col = "homs_per_100k"
             title = "Homicide"
-
         elif category == "rape":
             rate_col = "rape_per_100k"
             title = "Rape"
-
         elif category == "rob":
             rate_col = "rob_per_100k"
             title = "Robbery"
-
         elif category == "agg_ass":
             rate_col = "agg_ass_per_100k"
             title = "Aggravated Assault"
 
-        yearly = (
-            d.groupby("year").agg({rate_col: "mean"}).reset_index().sort_values("year")
+        d[rate_col] = pd.to_numeric(d[rate_col], errors="coerce")
+        d["year"] = pd.to_numeric(d["year"], errors="coerce")
+        d = d.dropna(subset=[rate_col, "year", "city"])
+
+        if d.empty:
+            return pd.DataFrame({"message": ["No data available"]})
+
+        latest_df = (
+            d[d["year"] == yr_max]
+            .groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        yearly["Change in crime rate (%)"] = round(
-            yearly[rate_col].pct_change(periods=1) * 100, 2
-        )
-        yearly[rate_col] = yearly[rate_col].round(3)
-
-        yearly = yearly.rename(
-            columns={
-                "year": "Year",
-                rate_col: f"{title} Rate (per 100k)",
-                "Change in crime rate (%)": f"Change in {title} Rate (%)",
-            }
+        prev_df = (
+            d[(d["year"] >= yr_min) & (d["year"] < yr_max)]
+            .groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        return yearly
+        latest_col = f"{yr_max}"
+        prev_col = f"Avg {yr_min}–{yr_max-1}"
+
+        latest_df = latest_df.rename(columns={rate_col: latest_col})
+        prev_df = prev_df.rename(columns={rate_col: prev_col})
+
+        comparison_df = latest_df.merge(prev_df, on="city", how="left")
+
+        comparison_df["% Change"] = round(
+            ((comparison_df[latest_col] - comparison_df[prev_col]) / comparison_df[prev_col]) * 100,
+            2,
+        )
+
+        comparison_df[latest_col] = comparison_df[latest_col].round(3)
+        comparison_df[prev_col] = comparison_df[prev_col].round(3)
+
+        comparison_df = comparison_df.rename(columns={"city": "City"})
+        comparison_df = comparison_df.sort_values(by=latest_col, ascending=False)
+
+        selected = list(input.cities())
+
+        if selected and "All" in selected:
+            comparison_df = comparison_df.head(10)
+
+        comparison_df = comparison_df.reset_index(drop=True)
+
+        return comparison_df
+
 
     @output
     @render.text
@@ -1090,14 +1165,20 @@ def server(input, output, session):
         elif category == "agg_ass":
             title = "Aggravated Assault"
 
-        return f"Change in {title} Rate ({yr_min}-{yr_max})"
+        return f"{title} Rate by City: {yr_max} vs Avg from {yr_min}–{yr_max-1}"
 
     @render.text
     def aggregation_note():
         selected = list(input.cities())
 
+        if selected and "All" in selected:
+            return "Note: Showing top 10 cities by latest crime rate."
+
         if selected and "All" not in selected and len(selected) > 1:
-            return "Note: Table values are aggregated across selected cities."
+            return "Note: Showing selected cities."
+
+        if selected and "All" not in selected and len(selected) == 1:
+            return "Note: Showing selected city."
 
         return ""
 
