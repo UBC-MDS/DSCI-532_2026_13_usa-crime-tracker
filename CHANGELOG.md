@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 3 unit tests for the filter
 - Added README instructions and specifications for running the tests
 - RAG: Custom Knowledge Base for Querychat
-- 
+
 ### Changed
 
 - Filter section redesigned to be more compact and user-friendly, with filters organized into collapsible sections to save space and improve navigation.
@@ -87,6 +87,7 @@ The limited number of data points for US cities is a drawback in our dashboard, 
 
 
 <!-- Trade-offs: one sentence on feedback prioritization - full rationale is in #<issue> and ### Changed above. -->
+
 ##### Trade-offs:
 
 For our feedback prioritization, we focused on issues that reflected broken functionality, inconsistencies in our dashboard, or information presented in a confusing manner, and decided minor styling/details were non-critical given the short timeframe for this milestone. The full rationale is in #133 and ###Changed above.
@@ -105,6 +106,36 @@ The most useful feedback was the collaboration feeback from milestone 3. Our tea
 1. Verifies that the dashboard loads with the complete dataset displayed in the output table. This is critical as the dataset is the basis of the entire dashboard. If not loaded properly, the dashboard would be unable to convey information, or display inconsistent, misleading results.
 2. Checks that adjusting the year‑range slider correctly restricts the table to rows within the selected year interval. The year range is one of the more important features, allowing users to filter for, and view crime rates trends over time. If broken, it will be hard to discern current information from old, out-of-date statsitics.
 3. Ensures that selecting a specific state ID filters the table so that only rows from the corresponding state appear. If not working properly, the table view will not acccurately reflect the state of the map, or the line chart. This could be confusing as cities might show up in the table which are not in the rest of the display.
+
+
+###### Unit Test Coverage
+
+test_year_slider_changes_kpi(page: Page, app: ShinyAppProc):
+Verify that adjusting the year-range slider updates the total crimes KPI.
+
+test_total_crimes_correct(page: Page, app: ShinyAppProc):
+Ensure the app's displayed total crimes value matches the computed latest-year total from the dataset.
+
+test_state_filter_total_crimes_correct(page: Page, app: ShinyAppProc):
+Confirm that selecting a state actually filters the data.
+
+test_filter_by_city():
+Filtering by city should return all rows for that city in the dataset.
+
+test_filter_by_year():
+Filtering by year should return all rows for that year in the dataset.
+
+test_empty_filter_returns_all():
+No filters applied should return the same rows the app would show with default settings.
+
+test_nonexistent_city_returns_empty():
+Filtering for a city not in the dataset should return zero rows.
+
+test_aggregation_correctness():
+Ensures violent_crime equals the sum of its components, preventing incorrect totals in the dataset.
+
+test_year_boundary_condition():
+Checks that filtering at the dataset's min/max year returns the correct rows, matching slider boundaries.
 
 ## [0.3.0] - 2026-03-08
 
