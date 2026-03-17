@@ -77,16 +77,16 @@ In the terminal, enter:
 Ctrl + C
 ```
 
-## 5. Running Playwright Tests
+## 5. Running Tests
 
 Install dependencies:
 
     pip install -r requirements.txt
     playwright install
 
-Run all tests (Playwright):
+Run all tests (pytest + Playwright):
 
-    python -m pytest tests/test_playwright.py -v --browser firefox
+    pytest
 
 This command works in a clean environment.
 
@@ -98,18 +98,6 @@ Ensure the app's displayed total crimes value matches the computed latest-year t
 
 test_state_filter_total_crimes_correct(page: Page, app: ShinyAppProc):
 Confirm that selecting a state actually filters the data.
-
-## 6. Running Unit Tests
-
-Install dependencies:
-
-    pip install -r requirements.txt
-
-Run all tests (pytest + Playwright):
-
-    pytest
-
-This command works in a clean environment.
 
 test_filter_by_city():
 Filtering by city should return all rows for that city in the dataset.

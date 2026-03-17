@@ -16,6 +16,10 @@ dependencies:
   - duckdb
   - python-dotenv
   - tiktoken
+  - playwright
+  - pytest
+  - pytest-playwright
+  - scikit-learn
   - pip = 26.0.1
   - pip:
     - querychat
