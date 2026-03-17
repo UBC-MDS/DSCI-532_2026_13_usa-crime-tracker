@@ -19,8 +19,7 @@ con = ibis.duckdb.connect()
 
 # Read the parquet file
 merged_table = con.read_parquet(
-    "data/processed/crime_merged.parquet",
-    table_name="crime_data"
+    "data/processed/crime_merged.parquet", table_name="crime_data"
 )
 
 # Execute once for UI defaults/app setup
@@ -141,7 +140,9 @@ max_pop = int(df_merged["total_pop"].max())
 qc = querychat.QueryChat(
     df_merged.copy(),
     "Statistics",
-    greeting="""👋 Ask me anything about US crime statistics.
+    greeting="""👋 Welcome to the USA Crime Statistics Dashboard, I am your AI data assistant.
+    Try asking about specific years, cities, or making comparisons bewteen multiple cities.
+    You can use the drop down menu above to select a diffrent crime category.
 
 * <span class="suggestion">Filter to Los Angeles only</span>
 * <span class="suggestion">Which city has the highest crime rate?</span>
@@ -189,19 +190,6 @@ state_mapping = {
     client=ChatGithub(model="gpt-4.1-mini"),
 )
 
-# # Commented out LLM frontend UI code
-# ui.nav_panel(
-#     "LLM Chat",
-#     ui.layout_sidebar(
-#         qc.sidebar(),
-#         ui.card(
-#             ui.card_header(ui.output_text("chat_title")),
-#             ui.output_data_frame("chat_table"),
-#             fill=True,
-#         ),
-#         fillable=True,
-#     ),
-# )
 
 app_ui = ui.page_navbar(
     # PAGE 1: Dashboard
@@ -263,7 +251,7 @@ app_ui = ui.page_navbar(
                 # Aggregated crime filter
                 ui.input_slider(
                     "violent_range",
-                    "Violent Crime Range",
+                    "Violent Crime Rate Range (per 100k)",
                     min=int(df_merged["violent_per_100k"].min()),
                     max=int(df_merged["violent_per_100k"].max()),
                     value=(
@@ -480,7 +468,7 @@ app_ui = ui.page_navbar(
                         ),
                     ),
                     ui.value_box(
-                        "Crime Rate (per 100k)",
+                        ui.output_text("crime_rate_title"),
                         ui.div(
                             ui.output_text("crime_rate"),
                             ui.div(
@@ -490,14 +478,27 @@ app_ui = ui.page_navbar(
                         ),
                     ),
                     ui.value_box(
-                        "Population",
+                        "Lowest Avg Crime City (All Cities)",
                         ui.div(
-                            ui.output_text("pop_kpi"),
+                            ui.output_text("kpi_min_city"),
                             ui.div(
-                                {"style": "font-size:12px; color:gray;"},
-                                ui.output_ui("pop_change"),
+                                {"style": "font-size:12px;"},
+                                ui.output_text("kpi_min_note"),
                             ),
                         ),
+                        theme="bg-success text-white",
+                    ),
+
+                    ui.value_box(
+                        "Highest Avg Crime (All Cities)",
+                        ui.div(
+                            ui.output_text("kpi_max_city"),
+                            ui.div(
+                                {"style": "font-size:12px;"},
+                                ui.output_text("kpi_max_note"),
+                            ),
+                        ),
+                        theme="bg-danger text-white",
                     ),
                     # ADDED: KPI — MOST COMMON CRIME
                     ui.card(
@@ -509,6 +510,7 @@ app_ui = ui.page_navbar(
             ui.card(
                 ui.h5("Crime Map"),
                 output_widget("map_plot"),
+                style="border: none; box-shadow: none;",
             ),
             ui.hr(),
             # Modified: Aggregated Crime Line Plot + KPI table in same row
@@ -570,6 +572,7 @@ app_ui = ui.page_navbar(
             ui.card(
                 ui.h5(ui.output_text("chat_map_title")),
                 output_widget("chat_map_plot"),
+                style="border: none; box-shadow: none;",
             ),
             ui.hr(),
             # --- Visual Summaries ---
@@ -596,25 +599,6 @@ app_ui = ui.page_navbar(
             fillable=True,
         ),
         value="llm_interface",
-        # ui.layout_columns(
-        #     {"class": "ai-assistant-offset"},
-        #     ui.card(
-        #         ui.h3("AI Assistant"),
-        #         ui.input_text_area(
-        #             "ai_user_input",
-        #             "Ask the AI about the dataset:",
-        #             placeholder="e.g., summarize crime trends in Texas",
-        #             rows=4,
-        #         ),
-        #         ui.input_action_button("ai_send_btn", "Send"),
-        #         ui.hr(),
-        #         ui.h4("AI Response"),
-        #         ui.output_text_verbatim("ai_chat_output"),
-        #         ui.hr(),
-        #         ui.h4("Filtered DataFrame"),
-        #         ui.output_data_frame("ai_dataframe_output"),
-        #     ),
-        # ),
     ),
     title=ui.output_text("dashboard_title"),
     position="fixed-top",
@@ -762,49 +746,47 @@ def server(input, output, session):
 
         return rate
 
-    @render.text
-    def pop_kpi():
-        df = filtered_df().copy()
-        latest_year = df["year"].max()
-        df_latest = df[df["year"] == latest_year]
-        duplicates_cities = df_latest.drop_duplicates(subset=["city", "state_id"])
-        pop = int(duplicates_cities["total_pop"].sum())
-
-        return f"{pop:,}"
-
-    @render.text
-    def pop_change():
-
-        df = filtered_df().copy()
-        if df.empty:
-            return ""
+    @reactive.calc
+    def city_crime_extremes():
+        df = df_merged.copy()
 
         yr_min, yr_max = input.year_range()
+        df["year"] = pd.to_numeric(df["year"], errors="coerce")
+        df = df.dropna(subset=["year"])
+        df = df[(df["year"] >= yr_min) & (df["year"] <= yr_max)]
 
-        # latest year
-        df_latest = df[df["year"] == yr_max]
+        pmin, pmax = input.population_range()
+        df["total_pop"] = pd.to_numeric(df["total_pop"], errors="coerce")
+        df = df.dropna(subset=["total_pop"])
+        df = df[(df["total_pop"] >= pmin) & (df["total_pop"] <= pmax)]
 
-        # previous years
-        df_prev = df[(df["year"] >= yr_min) & (df["year"] < yr_max)]
+        category = str(input.crime_category())
+        config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
+        rate_col = config["per_100k_column"]
 
-        latest_pop = df_latest.drop_duplicates(["city", "state_id"])["total_pop"].sum()
+        df[rate_col] = pd.to_numeric(df[rate_col], errors="coerce")
+        df = df.dropna(subset=[rate_col, "city"])
 
-        prev_yearly_pop = df_prev.groupby("year").apply(
-            lambda x: x.drop_duplicates(["city", "state_id"])["total_pop"].sum()
+        if df.empty:
+            return None
+
+        city_rates = (
+            df.groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        prev_avg_pop = prev_yearly_pop.mean()
+        if city_rates.empty:
+            return None
 
-        pct_change = ((latest_pop - prev_avg_pop) / prev_avg_pop) * 100
-        pct_change = round(pct_change, 2)
+        max_row = city_rates.loc[city_rates[rate_col].idxmax()]
+        min_row = city_rates.loc[city_rates[rate_col].idxmin()]
 
-        color = "green" if pct_change > 0 else "red"
-        sign = "+" if pct_change > 0 else ""
-
-        return ui.span(
-            f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg",
-            style=f"font-size:12px; color:{color};",
-        )
+        return {
+            "max_city": max_row["city"],
+            "max_rate": round(max_row[rate_col], 1),
+            "min_city": min_row["city"],
+            "min_rate": round(min_row[rate_col], 1),
+        }
 
     @render.text
     def debug_line_plot():
@@ -814,6 +796,44 @@ def server(input, output, session):
             f"cities: {list(input.cities())}\n"
             f"violent_range: {input.violent_range()}\n"
         )
+    @render.text
+    def kpi_max_city():
+        result = city_crime_extremes()
+        if result is None:
+            return "No data"
+        return result["max_city"]
+    
+    @render.text
+    def kpi_min_city():
+        result = city_crime_extremes()
+        if result is None:
+            return "No data"
+        return result["min_city"]
+    
+
+    @render.text
+    def kpi_max_note():
+        result = city_crime_extremes()
+        if result is None:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+        category = str(input.crime_category())
+        title = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])["title"]
+
+        return f"{result['max_rate']} per 100k • {title} • Avg {yr_min}–{yr_max}"
+    
+    @render.text
+    def kpi_min_note():
+        result = city_crime_extremes()
+        if result is None:
+            return ""
+
+        yr_min, yr_max = input.year_range()
+        category = str(input.crime_category())
+        title = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])["title"]
+
+        return f"{result['min_rate']} per 100k • {title} • Avg {yr_min}–{yr_max}"
 
     @render_altair
     def line_plot():
@@ -879,15 +899,14 @@ def server(input, output, session):
     @render_altair
     def map_plot():
 
-        # need to filter df on years still!
-        # need to change to collect inputs!
-
         df = df_merged.copy()
 
         state_id_to_show = int(input.state_id())
         selected = list(input.cities())
         category = str(input.crime_category())
         config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
+        col = config["column"]
+        vmin, vmax = input.violent_range()
 
         # Year filter
         try:
@@ -900,7 +919,6 @@ def server(input, output, session):
             yr_min, yr_max = df["year"].min(), df["year"].max()
 
         # State filter
-        state_id_to_show = int(input.state_id())
         if state_id_to_show != 0:
             # state_id_map values look like "Alabama (AL)" -> grab "AL"
             st_abbr = state_id_map[state_id_to_show][-3:-1]
@@ -909,13 +927,9 @@ def server(input, output, session):
         # Violent range filter
         df["violent_crime"] = pd.to_numeric(df["violent_crime"], errors="coerce")
         df = df.dropna(subset=["violent_crime"])
-        vmin, vmax = input.violent_range()
         df = df[(df["violent_crime"] >= vmin) & (df["violent_crime"] <= vmax)]
 
         # Crime category filter
-        category = str(input.crime_category())
-        config = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])
-        col = config["column"]
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
             df = df.dropna(subset=[col])
@@ -1007,7 +1021,7 @@ def server(input, output, session):
                 alt.layer(background, cities)
                 .configure_view(stroke=None)
                 .project("albersUsa")
-                .properties(width="container", height=500)
+                .properties(width="container", height=400)
             )
 
         # Color All Cities
@@ -1037,7 +1051,7 @@ def server(input, output, session):
             alt.layer(background, cities)
             .configure_view(stroke=None)
             .project("albersUsa")
-            .properties(width="container", height=500)
+            .properties(width="container", height=400)
         )
 
     # ADDED: KPI — MOST COMMON CRIME (USING *_sum COLUMNS)
@@ -1062,53 +1076,79 @@ def server(input, output, session):
         return most_common_crime()
 
     # ADDED: KPI — CHANGE IN CRIME RATE (violent_per_100k)
-    @reactive.Calc
+    @reactive.Calc          #used the help of AI for this calcaulation, I was pretty confused on. how to implement the city comparision
     def crime_change_table():
         d = filtered_df().copy()
+
         if d.empty:
             return pd.DataFrame({"message": ["No data available"]})
 
-        # Compute average violent crime rate per year
         category = input.crime_category()
+        yr_min, yr_max = input.year_range()
 
         if category == "violent":
             rate_col = "violent_per_100k"
             title = "Violent Crime"
-
         elif category == "homs":
             rate_col = "homs_per_100k"
             title = "Homicide"
-
         elif category == "rape":
             rate_col = "rape_per_100k"
             title = "Rape"
-
         elif category == "rob":
             rate_col = "rob_per_100k"
             title = "Robbery"
-
         elif category == "agg_ass":
             rate_col = "agg_ass_per_100k"
             title = "Aggravated Assault"
 
-        yearly = (
-            d.groupby("year").agg({rate_col: "mean"}).reset_index().sort_values("year")
+        d[rate_col] = pd.to_numeric(d[rate_col], errors="coerce")
+        d["year"] = pd.to_numeric(d["year"], errors="coerce")
+        d = d.dropna(subset=[rate_col, "year", "city"])
+
+        if d.empty:
+            return pd.DataFrame({"message": ["No data available"]})
+
+        latest_df = (
+            d[d["year"] == yr_max]
+            .groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        yearly["Change in crime rate (%)"] = round(
-            yearly[rate_col].pct_change(periods=1) * 100, 2
-        )
-        yearly[rate_col] = yearly[rate_col].round(3)
-
-        yearly = yearly.rename(
-            columns={
-                "year": "Year",
-                rate_col: f"{title} Rate (per 100k)",
-                "Change in crime rate (%)": f"Change in {title} Rate (%)",
-            }
+        prev_df = (
+            d[(d["year"] >= yr_min) & (d["year"] < yr_max)]
+            .groupby("city", as_index=False)[rate_col]
+            .mean()
         )
 
-        return yearly
+        latest_col = f"{yr_max}"
+        prev_col = f"Avg {yr_min}–{yr_max-1}"
+
+        latest_df = latest_df.rename(columns={rate_col: latest_col})
+        prev_df = prev_df.rename(columns={rate_col: prev_col})
+
+        comparison_df = latest_df.merge(prev_df, on="city", how="left")
+
+        comparison_df["% Change"] = round(
+            ((comparison_df[latest_col] - comparison_df[prev_col]) / comparison_df[prev_col]) * 100,
+            2,
+        )
+
+        comparison_df[latest_col] = comparison_df[latest_col].round(3)
+        comparison_df[prev_col] = comparison_df[prev_col].round(3)
+
+        comparison_df = comparison_df.rename(columns={"city": "City"})
+        comparison_df = comparison_df.sort_values(by=latest_col, ascending=False)
+
+        selected = list(input.cities())
+
+        if selected and "All" in selected:
+            comparison_df = comparison_df.head(10)
+
+        comparison_df = comparison_df.reset_index(drop=True)
+
+        return comparison_df
+
 
     @output
     @render.text
@@ -1127,14 +1167,20 @@ def server(input, output, session):
         elif category == "agg_ass":
             title = "Aggravated Assault"
 
-        return f"Change in {title} Rate ({yr_min}-{yr_max})"
+        return f"{title} Rate by City: {yr_max} vs Avg from {yr_min}–{yr_max-1}"
 
     @render.text
     def aggregation_note():
         selected = list(input.cities())
 
+        if selected and "All" in selected:
+            return "Note: Showing top 10 cities by latest crime rate."
+
         if selected and "All" not in selected and len(selected) > 1:
-            return "Note: Table values are aggregated across selected cities."
+            return "Note: Showing selected cities."
+
+        if selected and "All" not in selected and len(selected) == 1:
+            return "Note: Showing selected city."
 
         return ""
 
@@ -1194,6 +1240,13 @@ def server(input, output, session):
         )
 
     @render.text
+    def crime_rate_title():
+        yr_min, yr_max = input.year_range()
+        category = str(input.crime_category())
+        title = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])["title"]
+        return f"{yr_max} {title} Rate (per 100k)"
+
+    @render.text
     def dashboard_title():
         yr_min, yr_max = input.year_range()
         return f"USA Crime Dashboard ({yr_min}–{yr_max})"
@@ -1228,52 +1281,6 @@ def server(input, output, session):
     def kpi_change_table():
         return crime_change_table()
 
-    # @reactive.Effect
-    # @reactive.event(input.ai_send_btn)
-    # def _():
-    #     user_input = input.ai_user_input()
-
-    #     if not user_input:
-    #         output.ai_chat_output.set("Please enter a question.")
-    #         return
-
-    #     output.ai_chat_output.set("Thinking...")
-
-    #     async def call_ai():
-    #         try:
-    #             response = await asyncio.to_thread(
-    #                 client.messages.create,
-    #                 model="claude-haiku-4-5-20251001",
-    #                 max_tokens=MAX_TOKENS,
-    #                 messages=[{"role": "user", "content": user_input}],
-    #             )
-    #             return response.content[0].text
-    #         except Exception as e:
-    #             return f"Error calling Anthropic API: {e}"
-
-    #     task = reactive.Task(call_ai())
-
-    #     @task.on_done
-    #     def _(result):
-    #         output.ai_chat_output.set(result)
-
-    # # Filtered df
-    # @output
-    # @render.data_frame
-    # def ai_dataframe_output():
-    #     return filtered_df()
-
-    # # ── Tab 2: querychat
-    # qc_vals = qc.server()
-
-    # @render.text
-    # def chat_title():
-    #     return qc_vals.title() or "US Crime dataset"
-
-    # @render.data_frame
-    # def chat_table():
-    #     return qc_vals.df()
-
     # --- Tab 2: querychat ---
     qc_vals = qc.server()
 
@@ -1284,8 +1291,6 @@ def server(input, output, session):
     @render.data_frame
     def chat_table():
         return qc_vals.df()
-
-    # filtered_df_reactive = querychat_server("chat_logic", data=pd.read_csv("data.csv"))
 
     @reactive.calc
     def chat_filtered_data():
@@ -1477,7 +1482,7 @@ def server(input, output, session):
                 alt.layer(background, cities)
                 .configure_view(stroke=None)
                 .project("albersUsa")
-                .properties(width="container", height=500)
+                .properties(width="container", height=400)
             )
 
         # Color All Cities
@@ -1508,7 +1513,7 @@ def server(input, output, session):
             alt.layer(background, cities)
             .configure_view(stroke=None)
             .project("albersUsa")
-            .properties(width="container", height=500)
+            .properties(width="container", height=400)
         )
 
 
