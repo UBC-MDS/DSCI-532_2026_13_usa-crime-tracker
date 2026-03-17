@@ -85,7 +85,7 @@ The most useful feedback was the collaboration feeback from milestone 3. Our tea
 
 1. Verifies that the dashboard loads with the complete dataset displayed in the output table. This is critical as the dataset is the basis of the entire dashboard. If not loaded properly, the dashboard would be unable to convey information, or display inconsistent, misleading results.
 2. Checks that adjusting the year‑range slider correctly restricts the table to rows within the selected year interval. The year range is one of the more important features, allowing users to filter for, and view crime rates trends over time. If broken, it will be hard to discern current information from old, out-of-date statsitics.
-3. Ensures that selecting a specific state ID filters the table so that only rows from the corresponding state appear. If not workoing properly, the table view will not acccurately reflect the state of the map, or the line chart. This could be confusing as cities my show up in the table which are not in the rest of the display.
+3. Ensures that selecting a specific state ID filters the table so that only rows from the corresponding state appear. If not working properly, the table view will not acccurately reflect the state of the map, or the line chart. This could be confusing as cities might show up in the table which are not in the rest of the display.
 
 ## [0.3.0] - 2026-03-08
 
