@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Converted dataset to parquet format for improved performance and faster loading times.
 - Data connects using ibis and duckdb for efficient querying and filtering of the parquet files.
+- Updated CONTRIBUTING.md with M3 collaboration retrospective, and M4 commitments.
 
 ### Changed
 - Filter section redesigned to be more compact and user-friendly, with filters organized into collapsible sections to save space and improve navigation.
@@ -90,7 +91,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reorganized layout so map and line chart serve as the primary analytical views.
 - Changed placement of Change in Crime Rate table to align with line chart analysis view.
 - Updated component structure to better align with implemented job stories and filtering workflow.
-- Updated CONTRIBUTING.md with M3 collaboration retrospective, and M4 commitments.
 
 ### Known Issues
 
