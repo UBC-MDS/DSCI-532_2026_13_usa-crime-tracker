@@ -468,7 +468,7 @@ app_ui = ui.page_navbar(
                         ),
                     ),
                     ui.value_box(
-                        "Crime Rate (per 100k)",
+                        ui.output_text("crime_rate_title"),
                         ui.div(
                             ui.output_text("crime_rate"),
                             ui.div(
@@ -1238,6 +1238,13 @@ def server(input, output, session):
             f"{sign}{pct_change}% vs {yr_min}-{yr_max-1} avg",
             style=f"font-size:12px; color:{color};",
         )
+
+    @render.text
+    def crime_rate_title():
+        yr_min, yr_max = input.year_range()
+        category = str(input.crime_category())
+        title = CRIME_CONFIG.get(category, CRIME_CONFIG["violent"])["title"]
+        return f"{yr_max} {title} Rate (per 100k)"
 
     @render.text
     def dashboard_title():
