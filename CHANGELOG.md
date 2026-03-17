@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Converted dataset to parquet format for improved performance and faster loading times.
 - Data connects using ibis and duckdb for efficient querying and filtering of the parquet files.
+- Updated CONTRIBUTING.md with M3 collaboration retrospective, and M4 commitments.
 - Added a KPI output that shows the highest and lowest crime rate that is filtered on year, crime category and population. This replaces the population KPI that was there in the previous week's milestone
-
 
 ### Changed
 - Filter section redesigned to be more compact and user-friendly, with filters organized into collapsible sections to save space and improve navigation.
