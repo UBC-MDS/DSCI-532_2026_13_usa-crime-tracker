@@ -44,23 +44,23 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 When deploying the application (e.g., on Posit Connect Cloud), this variable must be added to the deployment's **Environment Variables** so the AI assistant can communicate with the Anthropic API.
 
-# Running the App Locally 
+# Running the App Locally
 
-## 1. Close the Repository 
+## 1. Clone the Repository
 
 ```bash
 git clone https://github.com/UBC-MDS/DSCI-532_2026_13_usa-crime-tracker.git
 cd DSCI-532_2026_13_usa-crime-tracker
 ```
 
-## 2. Create the Conda Environment 
+## 2. Create the Conda Environment
 
 ```bash
 conda env create -f environment.yml
 conda activate usa-crime-tracker
 ```
 
-## 3. Run the Shiny App 
+## 3. Run the Shiny App
 
 ```bash
 shiny run src/app.py
@@ -81,42 +81,18 @@ Ctrl + C
 
 Install dependencies:
 
-    pip install -r requirements.txt
-    playwright install
+```bash
+pip install -r requirements.txt
+```
 
 Run all tests (pytest + Playwright):
 
-    pytest
+```bash
+pytest
+```
 
-This command works in a clean environment.
-
-test_year_slider_changes_kpi(page: Page, app: ShinyAppProc):
-Verify that adjusting the year-range slider updates the total crimes KPI.
-
-test_total_crimes_correct(page: Page, app: ShinyAppProc):
-Ensure the app's displayed total crimes value matches the computed latest-year total from the dataset.
-
-test_state_filter_total_crimes_correct(page: Page, app: ShinyAppProc):
-Confirm that selecting a state actually filters the data.
-
-test_filter_by_city():
-Filtering by city should return all rows for that city in the dataset.
-
-test_filter_by_year():
-Filtering by year should return all rows for that year in the dataset.
-
-test_empty_filter_returns_all():
-No filters applied should return the same rows the app would show with default settings.
-
-test_nonexistent_city_returns_empty():
-Filtering for a city not in the dataset should return zero rows.
-
-test_aggregation_correctness():
-Ensures violent_crime equals the sum of its components, preventing incorrect totals in the dataset.
-
-test_year_boundary_condition():
-Checks that filtering at the dataset's min/max year returns the correct rows, matching slider boundaries.
 
 # Contributors
+
  If you are looking to contribute ot the project please refer to the guidelines in this document: 
  [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
