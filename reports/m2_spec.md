@@ -28,7 +28,8 @@
 | chat_filtered_data (chat)        | Reactive calc | @reactive.calc                                 | querychat: qc.server(), chat_table          | #2, #3, #4, #5, #6, #7   |
 | KPI (Total Crime)                | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func""))m, input_year, input_region | #2, #3, #4, #5, #6, #7  |
 | KPI (Crime Rate)                 | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func"")), filtered_df | #2, #3, #5   |
-| KPI (population)                 | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func"")), filtered_df | #2, #3, #6   |
+| KPI (Highest Crime City )                 | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func"")), df_merged,  | #2, #3, #6   |
+| KPI (Lowest Crime City )                 | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func"")), df_merged,  | #2, #3, #6   |
 | KPI (Most Common Crime)          | Output        | @reactive.text; ui.value_box("name"            | ui.output_text(""name_from_server_func""))  | #2, #3, #4               |
 | KPI (Change in Crime Rate) Table | Output        | @render.data_frame                             |                                             | #2, #3, #5               |
 | map_plot  (dashboard)            | Output        | @render.altair; ui.ouput_widget("map_plot")    | merged_df                                   | #1, #2, #3, #4, #6, #7   |
