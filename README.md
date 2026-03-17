@@ -82,6 +82,7 @@ Ctrl + C
 Install dependencies:
 
     pip install -r requirements.txt
+    playwright install
 
 Run all tests (Playwright):
 
