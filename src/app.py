@@ -150,6 +150,7 @@ kb_chunks = [c.strip() for c in _kb_path.read_text().split("\n\n") if c.strip()]
 kb_vectorizer = TfidfVectorizer()
 kb_vectors = kb_vectorizer.fit_transform(kb_chunks)
 
+
 def retrieve(query: str, top_k: int = 3) -> list[str]:
     """Return top_k most relevant chunks for query using TF-IDF cosine similarity."""
     q_vec = kb_vectorizer.transform([query])
@@ -763,7 +764,11 @@ def server(input, output, session):
 
         total_crime = df_latest[crime_col].sum()
         total_pop = df_latest.drop_duplicates(["city", "state_id"])["total_pop"].sum()
-        rate = int((total_crime / total_pop) * 100000)
+
+        try:
+            rate = int((total_crime / total_pop) * 100000)
+        except Exception:
+            rate = "No Data"
 
         return rate
 
@@ -1299,7 +1304,7 @@ def server(input, output, session):
     qc_vals = qc.server()
 
     chat_session = qc.client()
-    
+
     # RAG
     @reactive.effect
     @reactive.event(input.querychat_user_input)
