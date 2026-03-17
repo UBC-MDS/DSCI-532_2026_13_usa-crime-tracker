@@ -62,7 +62,8 @@ flowchart TD
 
   F --> V1([out_total_crime])
   F --> V2([out_crime_rate])
-  F --> V3([out_population])
+  F --> V3([out_kpi_max_city])
+  F --> V7([out_kpi_min_city])
   F --> V4([out_most_common_crime])
   F --> V5([out_change_rate])
   ```
