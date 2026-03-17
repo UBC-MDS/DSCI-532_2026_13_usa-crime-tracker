@@ -44,7 +44,6 @@ httpcore==1.0.9
 httpx==0.28.1
 huggingface_hub==1.7.1
 hyperframe==6.1.0
-ibis==3.3.0
 ibis-framework==12.0.0
 idna==3.11
 importlib_metadata==8.7.0

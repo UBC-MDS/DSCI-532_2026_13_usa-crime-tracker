@@ -23,6 +23,5 @@ dependencies:
   - pip = 26.0.1
   - pip:
     - querychat
-    - ibis
     - ibis-framework[duckdb]
 prefix: /Users/devon/miniforge3/envs/usa-crime-tracker
