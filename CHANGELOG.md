@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Known Issues
 
+- ...
+
 ### Release Highlight: [Name of your advanced feature]
 
 <!-- One short paragraph describing what you built and what it does for the user. -->
@@ -49,20 +51,21 @@ The idea was to clearly distribute work, so everyone understood their tasks and 
 
 ### Reflection
 
-<!-- Standard (see General Guidelines): what the dashboard does well, current limitations,
-     any intentional deviations from DSCI 531 visualization best practices. -->
-
-### Reflection
 1–2 paragraphs (max 300 words) addressing:
 - What the dashboard does well at this stage.
 - Current limitations and planned improvements.
 - Any intentional deviations from DSCI 531 visualization best practices.
 
+- We have enhanced the visual storytelling/display aspects of the dashboard. The Map presents a clean display without sitting inside a scrollable card, the KPI's and table reflect current state of the dashboard and present updated visual info the presents a much clearer story. For instance, the table now represents a percentage change in crime per city over the last several years vs the previous percentage change per year. Added RAG system to the AI chatbot to improve quality of information presented to users, and provide more options for exploring crime statistics in the US. Current limitations are ......
+
 <!-- Trade-offs: one sentence on feedback prioritization - full rationale is in #<issue> and ### Changed above. -->
+
+For our feedback prioritization, we focused on issues that reflected broken functionality, displayed incosistencies in our dashboard, or presented visual information in an unclear manner. The full rationale is in #133 and ###Changed above. 
 
 <!-- Most useful: which lecture, material, or feedback shaped your work most this milestone,
      and anything you wish had been covered. -->
 
+The most useful feedback was the collaboration feeback from milestone 3. Our team has struggled with task distribution and collaboration practices. Upon receiveing M3 feedback, we prioritized strong collaboration practices by implementing a dedicated reviewer, increasing clarity on task assignment, increasing description wuality on PR, Changelog, and m2_spec documents, and setting up work deadlines. While we struggled to stick to every single aspect of these, we did show great improvement in our collaboration practices as a team as opposed to M1.
 
 ## [0.3.0] - 2026-03-08
 
