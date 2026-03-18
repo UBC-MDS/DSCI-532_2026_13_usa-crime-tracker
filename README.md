@@ -5,9 +5,14 @@ DSCI 532 Dashboard Projects
 
 Moving to a new country presents many challenges. One key factor that new immigrants must consider is safety. The USA Crime Tracker Dashboard is an interactive Shiny application that enables users to explore historical crime trends across the United States of America. Through coordinated visualizations and summary metrics, the app helps users identify geographic patterns, temporal trends, and relative crime risk to empower immigrants in making informed decisions about their safety when moving to the USA.
 
-Link to Published Stable Dashboard: <https://019ca5bd-b008-a68f-3889-89a1f04e0011.share.connect.posit.cloud/>
+Note to users: While we are working our hardest to expand our dataset, and collection methods, the current state of the dashboard is only displayed data for large metropolitan areas. Furthermore, while most data collection is per year, some police departments have reported data for lesser periods, and as such, some data resembles shorter timeframes. This does not have a major impact on the information provided by the dashboard.
 
-Link to Published Preview Dashboard: <https://019cceb6-3ded-e7e0-6b99-b2912a2ee701.share.connect.posit.cloud/>
+# Published Dashboard
+
+You can view the published main, and preview deployments at the following links:
+
+Link to Published Stable Dashboard: <https://019ca5bd-b008-a68f-3889-89a1f04e0011.share.connect.posit.cloud/>
+Link to Published Preview Dashboard: <https://019cfd8d-baec-ce27-fd4c-34375d9345c7.share.connect.posit.cloud/>
 
 # Users
 
