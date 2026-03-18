@@ -5,6 +5,138 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-17
+
+### Added
+
+- Converted dataset to parquet format for improved performance and faster loading times.
+- Data connects using ibis and duckdb for efficient querying and filtering of the parquet files.
+- Updated CONTRIBUTING.md with M3 collaboration retrospective, and M4 commitments.
+- Added a KPI output that shows the highest and lowest crime rate that is filtered on year, crime category and population (#135). This replaces the population KPI that was there in the previous week's milestone. 
+- 3 Playwright tests for the dashboard
+- 3 unit tests for the filter
+- Added README instructions and specifications for running the tests
+- RAG: Custom Knowledge Base for Querychat
+
+### Changed
+
+- Filter section redesigned to be more compact and user-friendly, with filters organized into collapsible sections to save space and improve navigation.
+- Changed Violent Crime Range filter title to "Violent Crime Rate per 100k" to clarify that the filter is based on the crime rate rather than total crime count.
+- Map plot display redesigned to remove scrollbar and bordered outline.
+- Corrected spelling mistakes in the crime category filter
+- Changed the crime rate comparison table to make city-to-city comparisons clearer (#157)
+- Changed the crime rate per 100k KPI title to reflect current crime selection (#155)
+- Addressed feedback by changing AI suggestions to better match user experience and so that it does something to the output.
+
+
+### Known Issues
+
+- ...
+
+### Release Highlight: RAG System
+
+Without RAG:
+If the retrieval step is removed, the chatbot will just take the user’s raw input and send it straight to the LLM:
+chat_session.chat(query)
+
+And the model answers purely from its built‑in knowledge. It has no access to the crime_glossary.txt file, so it won’t understand the details of our dataset.
+
+With RAG:
+Adds a retrieval layer before sending anything to the LLM:
+
+TF‑IDF searches the knowledge base chunks = retrieve(query, top_k=3) This pulls the most relevant glossary entries from crime_glossary.txt.
+
+Add those chunks to the user’s question augmented = f"Relevant context:\n{context}\n\nQuestion: {query}"
+
+Send the augmented message to the LLM chat_session.chat(augmented)
+
+So the model gets relevant information from the glossary text file instead of guessing.
+
+- **Option chosen:** C - RAG system
+- **PR:** Issue #144.
+- **Why this option over the others:** 
+
+Our initial thought was a click selection would benefit the user the most. However, we had difficulties imlpementing this and decided to implement a RAG system to be the second most beneficial. As our users are immigrants who know little about crime reporting in the US, we considered that providing a resource with more information on the sources of crime statistics would be the most beneficial resource. The RAG system now provides more detailed responses regarding the collection and sourcing of data. For instance, if asked for an explanation of homicide, the chat bot can repond that: homicide counts include murder and non-negligent manslaughter, but exclude negligent manslaughter and justifiable homicide. Previous iterations would only be able to report homicide is a part of the dataset.
+
+- **Feature prioritization issue link:** #124
+
+### Collaboration
+
+<!-- Summary of workflow or collaboration improvements made since M3. -->
+
+- **CONTRIBUTING.md:** <https://github.com/UBC-MDS/DSCI-532_2026_13_usa-crime-tracker/pull/162>
+
+- **M3 retrospective:** 
+
+After M3 collaboration feedback we implemented a more stingent PR review policy where each PR had to receive at least one review before merging.
+The team did well with this and overall made a strong effort to ensure this commitment was met. Moving forward into M4 we made commitments to continue
+this and further commited to better task assignment, clearer task assignment/descriptions, more descriptive PR comments, and last minute work rushes.
+
+- **M4:** 
+
+We decided to create a reviewer role for M4. This person's job is to handle all project management aspects of the milestones - creation and distribution of tasks as issues, PR reviewing, and complete any written components. We tried splitting and assigning all tasks as issues at the beginning of the milestone to create a cleaner working environemnt.
+The idea was to clearly distribute work, so everyone understood their tasks and roles for the milestone. Lastly, we implemented deadlines to avoid last minutes rushes.
+
+
+### Reflection
+
+We have enhanced the visual storytelling/display aspects of the dashboard. The crime statistics map now presents a cleaner display without sitting inside a scrollable card, and the KPI's + table reflect improved visualizations of the current state of the dashboard. The table now represents a percentage change in crime per city over the last several years versus the previously displayed percentage change per year. We have added KPI's for the city with the most + least crime ridden cities within our filters, and titles have been updated with clearer descriptions. We added the RAG system to the AI chatbot to improve the quality of information presented to users, and provide more options for exploring crime statistics sources in the US.
+
+
+The limited number of data points for US cities is a drawback in our dashboard, as the current dataset only covers larger metropolitan areas. Ideally, we would be able to gather crime statistics for all cities moving forward. Ultimately, we would like to dashboard to cover crime rates within cities as well as nationwide, giving users the option of zooming into local heatmaps for areas of interest. Moreover, we would like to increase functionality of the dashboard through on-click selections in the map plots, and increase the breadth of responses offered in the AI assisted chat.
+
+
+<!-- Trade-offs: one sentence on feedback prioritization - full rationale is in #<issue> and ### Changed above. -->
+
+##### Trade-offs:
+
+For our feedback prioritization, we focused on issues that reflected broken functionality, inconsistencies in our dashboard, or information presented in a confusing manner, and decided minor styling/details were non-critical given the short timeframe for this milestone. The full rationale is in #133 and ###Changed above.
+
+<!-- Most useful: which lecture, material, or feedback shaped your work most this milestone,
+     and anything you wish had been covered. -->
+
+##### Most Useful Feedback
+
+The most useful feedback was the collaboration feeback from milestone 3. Our team has struggled with task distribution and collaboration practices. Upon receiveing M3 feedback, we prioritized strong collaboration practices by implementing a dedicated reviewer, increasing clarity on task assignment, increasing description wuality on PR, Changelog, and m2_spec documents, and setting up work deadlines. While we struggled to stick to every single aspect of these, we did show great improvement in our collaboration practices as a team as opposed to M1.
+
+<!-- Tests: briefly describe what each test covers and what could break if the behavior changes. -->
+
+##### Playwright Test Coverage
+
+1. Verifies that the dashboard loads with the complete dataset displayed in the output table. This is critical as the dataset is the basis of the entire dashboard. If not loaded properly, the dashboard would be unable to convey information, or display inconsistent, misleading results.
+2. Checks that adjusting the year‑range slider correctly restricts the table to rows within the selected year interval. The year range is one of the more important features, allowing users to filter for, and view crime rates trends over time. If broken, it will be hard to discern current information from old, out-of-date statsitics.
+3. Ensures that selecting a specific state ID filters the table so that only rows from the corresponding state appear. If not working properly, the table view will not acccurately reflect the state of the map, or the line chart. This could be confusing as cities might show up in the table which are not in the rest of the display.
+
+
+###### Unit Test Coverage
+
+test_year_slider_changes_kpi(page: Page, app: ShinyAppProc):
+Verify that adjusting the year-range slider updates the total crimes KPI.
+
+test_total_crimes_correct(page: Page, app: ShinyAppProc):
+Ensure the app's displayed total crimes value matches the computed latest-year total from the dataset.
+
+test_state_filter_total_crimes_correct(page: Page, app: ShinyAppProc):
+Confirm that selecting a state actually filters the data.
+
+test_filter_by_city():
+Filtering by city should return all rows for that city in the dataset.
+
+test_filter_by_year():
+Filtering by year should return all rows for that year in the dataset.
+
+test_empty_filter_returns_all():
+No filters applied should return the same rows the app would show with default settings.
+
+test_nonexistent_city_returns_empty():
+Filtering for a city not in the dataset should return zero rows.
+
+test_aggregation_correctness():
+Ensures violent_crime equals the sum of its components, preventing incorrect totals in the dataset.
+
+test_year_boundary_condition():
+Checks that filtering at the dataset's min/max year returns the correct rows, matching slider boundaries.
+
 ## [0.3.0] - 2026-03-08
 
 ### Added
